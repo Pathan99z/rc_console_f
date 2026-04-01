@@ -1,0 +1,213 @@
+<template>
+  <div class="min-h-screen flex flex-col">
+
+    <!-- ══════════════════════════════════════
+         CENTERED FORM AREA
+    ══════════════════════════════════════ -->
+    <div class="flex-1 flex items-center justify-center px-4 py-12">
+      <div class="w-full max-w-[400px]">
+
+        <!-- Logo + Console title -->
+        <div class="flex flex-col items-center gap-2 mb-6">
+          <img :src="logo" alt="RC" class="h-16 w-16 object-contain" />
+          <span class="text-4xl font-bold text-gradient">Console</span>
+        </div>
+
+        <!-- ── Success state ── -->
+        <Transition name="fade" mode="out-in">
+          <div v-if="sent" class="text-center space-y-5">
+            <div class="flex justify-center">
+              <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg,rgba(122,47,240,0.12),rgba(226,61,173,0.1))">
+                <svg class="w-8 h-8" style="color: var(--color-primary-purple)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <h1 class="text-2xl font-semibold text-gray-900">Check your inbox</h1>
+              <p class="text-sm text-gray-500 leading-relaxed">
+                We've sent a password reset link to<br />
+                <span class="font-semibold text-gray-800">{{ submittedEmail }}</span>
+              </p>
+            </div>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              Didn't receive it? Check your spam folder or
+              <button
+                class="font-semibold transition-colors"
+                style="color: var(--color-brand-blue)"
+                @click="resend"
+              >
+                resend the email
+              </button>
+            </p>
+            <RouterLink
+              to="/login"
+              class="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors mt-2"
+              style="color: var(--color-primary-purple)"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Sign In
+            </RouterLink>
+          </div>
+
+          <!-- ── Form state ── -->
+          <div v-else>
+            <!-- Heading -->
+            <div class="text-center mb-6 space-y-1">
+              <h1 class="text-2xl font-semibold text-gray-900">Forgot password?</h1>
+              <p class="text-sm text-gray-500">Enter your email and we'll send you a reset link.</p>
+            </div>
+
+            <form @submit.prevent="handleSubmit" class="space-y-4" novalidate>
+
+              <!-- Email -->
+              <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-gray-700">Email</label>
+                <div class="relative">
+                  <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                    </svg>
+                  </span>
+                  <input
+                    v-model="form.email"
+                    type="email"
+                    placeholder="Enter your email"
+                    autocomplete="email"
+                    class="auth-input"
+                    :class="{ 'input-error': error }"
+                  />
+                </div>
+                <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+              </div>
+
+              <!-- Submit -->
+              <button
+                type="submit"
+                class="btn-primary w-full py-3 rounded-lg text-sm font-semibold tracking-wide mt-1"
+                :class="{ 'opacity-70 cursor-not-allowed': loading }"
+                :disabled="loading"
+              >
+                <span v-if="loading" class="flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Sending…
+                </span>
+                <span v-else>Send Reset Link</span>
+              </button>
+
+            </form>
+
+            <!-- Back to login -->
+            <p class="text-center text-sm text-gray-500 mt-5">
+              Remembered it?
+              <RouterLink
+                to="/login"
+                class="font-semibold ml-1 transition-colors"
+                style="color: var(--color-brand-blue)"
+              >
+                Back to Sign In
+              </RouterLink>
+            </p>
+          </div>
+        </Transition>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         BOTTOM BAR
+    ══════════════════════════════════════ -->
+    <div class="py-5 border-t border-gray-100">
+      <p class="text-center text-xs text-gray-400">
+        © 2026 Reliance Corporation. All rights reserved. &nbsp;·&nbsp;
+        <a href="#" class="hover:text-gray-600 transition-colors">Privacy Policy</a>
+      </p>
+    </div>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive } from 'vue'
+import logo from '@/assets/logo.png'
+
+const form = reactive({ email: '' })
+const error = ref('')
+const loading = ref(false)
+const sent = ref(false)
+const submittedEmail = ref('')
+
+function validate() {
+  error.value = ''
+  if (!form.email) {
+    error.value = 'Email is required'
+    return false
+  }
+  if (!/\S+@\S+\.\S+/.test(form.email)) {
+    error.value = 'Please enter a valid email address'
+    return false
+  }
+  return true
+}
+
+async function handleSubmit() {
+  if (!validate()) return
+  loading.value = true
+  await new Promise(r => setTimeout(r, 1200))
+  loading.value = false
+  submittedEmail.value = form.email
+  sent.value = true
+  // TODO: replace with real password reset API call
+}
+
+function resend() {
+  sent.value = false
+  form.email = submittedEmail.value
+}
+</script>
+
+<style scoped>
+.auth-input {
+  width: 100%;
+  padding: 0.65rem 1rem 0.65rem 2.75rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  color: #111827;
+  background: #fafafa;
+  transition: all 0.2s;
+  outline: none;
+}
+.auth-input:focus {
+  background: #ffffff;
+  border-color: var(--color-primary-purple);
+  box-shadow: 0 0 0 3px rgba(122, 47, 240, 0.12);
+}
+.auth-input::placeholder {
+  color: #9ca3af;
+}
+.input-error {
+  border-color: #f87171;
+}
+.input-error:focus {
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>
