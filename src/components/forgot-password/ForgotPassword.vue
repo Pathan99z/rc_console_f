@@ -17,8 +17,8 @@
         <Transition name="fade" mode="out-in">
           <div v-if="sent" class="text-center space-y-5">
             <div class="flex justify-center">
-              <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg,rgba(122,47,240,0.12),rgba(226,61,173,0.1))">
-                <svg class="w-8 h-8" style="color: var(--color-primary-purple)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background: var(--rc-accent-soft); border: 1px solid rgba(122,47,240,0.12)">
+                <svg class="w-8 h-8" style="color: var(--rc-accent)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -33,8 +33,7 @@
             <p class="text-xs text-gray-400 leading-relaxed">
               Didn't receive it? Check your spam folder or
               <button
-                class="font-semibold transition-colors"
-                style="color: var(--color-brand-blue)"
+                class="font-semibold transition-colors link-rc"
                 @click="resend"
               >
                 resend the email
@@ -43,7 +42,7 @@
             <RouterLink
               to="/login"
               class="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors mt-2"
-              style="color: var(--color-primary-purple)"
+              style="color: var(--rc-accent)"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -107,8 +106,7 @@
               Remembered it?
               <RouterLink
                 to="/login"
-                class="font-semibold ml-1 transition-colors"
-                style="color: var(--color-brand-blue)"
+            class="font-semibold ml-1 transition-colors link-rc"
               >
                 Back to Sign In
               </RouterLink>
@@ -175,18 +173,18 @@ function resend() {
 .auth-input {
   width: 100%;
   padding: 0.65rem 1rem 0.65rem 2.75rem;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid var(--rc-border);
   border-radius: 0.75rem;
   font-size: 0.875rem;
-  color: #111827;
-  background: #fafafa;
+  color: var(--rc-text);
+  background: var(--rc-surface-2);
   transition: all 0.2s;
   outline: none;
 }
 .auth-input:focus {
-  background: #ffffff;
-  border-color: var(--color-primary-purple);
-  box-shadow: 0 0 0 3px rgba(122, 47, 240, 0.12);
+  background: var(--rc-surface);
+  border-color: var(--rc-accent);
+  box-shadow: 0 0 0 3px rgba(122, 47, 240, 0.10);
 }
 .auth-input::placeholder {
   color: #9ca3af;

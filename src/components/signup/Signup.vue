@@ -163,7 +163,7 @@
             <div
               class="mt-0.5 flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
               :class="form.terms ? 'border-transparent' : 'border-gray-300 group-hover:border-purple-400'"
-              :style="form.terms ? 'background: var(--gradient-primary)' : ''"
+              :style="form.terms ? 'background: var(--rc-accent)' : ''"
               @click="form.terms = !form.terms"
             >
               <svg v-if="form.terms" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,8 +203,7 @@
           Already have an account?
           <RouterLink
             to="/login"
-            class="font-semibold ml-1 transition-colors"
-            style="color: var(--color-brand-blue)"
+            class="font-semibold ml-1 transition-colors link-rc"
           >
             Sign in
           </RouterLink>

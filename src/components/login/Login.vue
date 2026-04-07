@@ -83,7 +83,7 @@
               <div
                 class="w-4 h-4 rounded border-2 flex items-center justify-center transition-all flex-shrink-0"
                 :class="form.remember ? 'border-transparent' : 'border-gray-300 group-hover:border-purple-400'"
-                :style="form.remember ? 'background: var(--gradient-primary)' : ''"
+                :style="form.remember ? 'background: var(--rc-accent)' : ''"
                 @click="form.remember = !form.remember"
               >
                 <svg v-if="form.remember" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,8 +94,7 @@
             </label>
             <RouterLink
               to="/forgot-password"
-              class="text-sm font-semibold transition-colors"
-              style="color: var(--color-primary-pink)"
+              class="text-sm font-semibold transition-colors link-rc"
             >
               Forgot password?
             </RouterLink>
@@ -138,8 +137,7 @@
           Don't have an account?
           <RouterLink
             to="/signup"
-            class="font-semibold ml-1 transition-colors"
-            style="color: var(--color-brand-blue)"
+            class="font-semibold ml-1 transition-colors link-rc"
           >
             Create an account
           </RouterLink>
@@ -214,11 +212,11 @@ async function handleLogin() {
   width: 100%;
   /* left padding = icon width (1rem) + gap (0.875rem) + breathing room */
   padding: 0.65rem 1rem 0.65rem 2.75rem;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid var(--rc-border);
   border-radius: 0.75rem;
   font-size: 0.875rem;
-  color: #111827;
-  background: #fafafa;
+  color: var(--rc-text);
+  background: var(--rc-surface-2);
   transition: all 0.2s;
   outline: none;
 }
@@ -227,9 +225,9 @@ async function handleLogin() {
   padding-right: 3rem;
 }
 .auth-input:focus {
-  background: #ffffff;
-  border-color: var(--color-primary-purple);
-  box-shadow: 0 0 0 3px rgba(122, 47, 240, 0.12);
+  background: var(--rc-surface);
+  border-color: var(--rc-accent);
+  box-shadow: 0 0 0 3px rgba(122, 47, 240, 0.10);
 }
 .auth-input::placeholder {
   color: #9ca3af;
