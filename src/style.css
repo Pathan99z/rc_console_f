@@ -455,3 +455,170 @@ body::before {
   padding-left: 1rem;
   padding-right: 1rem;
 }
+
+/* =========================================================
+   Auth Module Global UI Tokens/Utilities
+   ========================================================= */
+.rc-auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+.rc-auth-card {
+  width: 100%;
+  max-width: 42rem;
+  background: var(--rc-surface);
+  border: 1px solid var(--rc-border-soft);
+  border-radius: 1rem;
+  padding: 1.5rem 1.35rem;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+.rc-auth-content {
+  width: 100%;
+  max-width: 30rem;
+  margin: 0 auto;
+}
+.rc-auth-content--wide {
+  max-width: 34rem;
+}
+.rc-auth-title {
+  color: var(--rc-text);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.rc-auth-subtitle {
+  color: var(--rc-text-muted);
+  font-size: 0.9rem;
+}
+.rc-auth-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+.rc-auth-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.rc-field {
+  display: grid;
+  gap: 0.4rem;
+}
+.rc-field-label {
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.rc-field-wrap {
+  position: relative;
+}
+.rc-input {
+  width: 100%;
+  border: 1px solid var(--rc-border);
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.9rem;
+  background: #fff;
+  color: var(--rc-text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.rc-input--password {
+  padding-right: 3.4rem;
+}
+.rc-input:focus {
+  outline: none;
+  border-color: var(--rc-accent);
+  box-shadow: 0 0 0 3px var(--rc-accent-soft);
+}
+.rc-input--error {
+  border-color: #f87171;
+}
+.rc-field-toggle {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--rc-text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.rc-field-error {
+  color: #dc2626;
+  font-size: 0.75rem;
+}
+.rc-auth-button {
+  background: var(--rc-accent);
+  color: #fff;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.72rem 1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.rc-auth-button:hover {
+  background: var(--rc-accent-hover);
+}
+.rc-auth-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.rc-auth-link {
+  color: var(--rc-accent);
+  font-weight: 600;
+}
+.rc-auth-link:hover {
+  color: var(--rc-accent-hover);
+}
+.rc-auth-alert {
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.875rem;
+  border: 1px solid transparent;
+}
+.rc-auth-alert--error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.rc-auth-alert--success {
+  background: #ecfdf3;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+.rc-auth-alert--info {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+.rc-strength {
+  display: grid;
+  gap: 0.3rem;
+}
+.rc-strength-bars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.25rem;
+}
+.rc-strength-bar {
+  height: 0.25rem;
+  border-radius: 999px;
+}
+.rc-strength-text {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+@media (min-width: 640px) {
+  .rc-auth-card {
+    padding: 2rem;
+  }
+}
+@media (max-width: 480px) {
+  .rc-auth-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
