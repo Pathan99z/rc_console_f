@@ -15,6 +15,10 @@ const menuItems = computed(() => {
     { to: '/app/dashboard', label: 'Dashboard', icon: 'grid' },
     { to: '/app/contacts', label: 'Contacts', icon: 'users' },
     { to: '/app/companies', label: 'Companies', icon: 'building' },
+    { to: '/app/deals', label: 'Deals', icon: 'briefcase' },
+    { to: '/app/products', label: 'Products', icon: 'box' },
+    { to: '/app/collaterals', label: 'Collaterals', icon: 'fileText' },
+    { to: '/app/quotes', label: 'Quotes', icon: 'receipt' },
   ]
   const companyAdminExtras = [
     { to: '/app/users', label: 'Users', icon: 'userCog' },
@@ -63,6 +67,10 @@ async function logout() {
           <svg v-else-if="item.icon === 'userCog'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a4 4 0 11-8 0 4 4 0 018 0zM3 21a6 6 0 1112 0M19.4 15a1 1 0 011.2 1.2l.8.3a1 1 0 010 1l-.8.3a1 1 0 01-1.2 1.2l-.3.8a1 1 0 01-1 0l-.3-.8a1 1 0 01-1.2-1.2l-.8-.3a1 1 0 010-1l.8-.3a1 1 0 011.2-1.2l.3-.8a1 1 0 011 0l.3.8z"/></svg>
           <svg v-else-if="item.icon === 'team'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.36-1.86M17 20H7m10 0v-2c0-.65-.13-1.28-.36-1.86M7 20H2v-2a3 3 0 015.36-1.86M7 20v-2c0-.65.13-1.28.36-1.86M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           <svg v-else-if="item.icon === 'building'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 21V7l8-4 6 3v15M9 9h1m-1 4h1m-1 4h1m4-8h1m-1 4h1m-1 4h1"/></svg>
+          <svg v-else-if="item.icon === 'briefcase'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2m-8 0h10a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2z"/></svg>
+          <svg v-else-if="item.icon === 'box'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8 4-8-4m16 0l-8-4-8 4m16 0v10l-8 4m-8-14v10l8 4m0-10v10"/></svg>
+          <svg v-else-if="item.icon === 'fileText'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 2v6h6"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 13H8M16 17H8M10 9H8"/></svg>
+          <svg v-else-if="item.icon === 'receipt'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14h6M9 10h6M9 18h6M7 3h10a1 1 0 011 1v16l-2-1-2 1-2-1-2 1-2-1-2 1V4a1 1 0 011-1z"/></svg>
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m6 0h6M15 21h6m-6-2v2M3 12h18M3 19h12"/></svg>
         </span>
         {{ item.label }}

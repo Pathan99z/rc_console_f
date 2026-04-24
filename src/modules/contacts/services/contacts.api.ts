@@ -55,9 +55,45 @@ type ImportResponse = {
   data: { created: number; skipped: number }
 }
 
+const stageToCodeMap: Record<string, number> = {
+  lead: 0,
+  prospect: 1,
+  customer: 2,
+  inactive: 3,
+}
+
+function toQueryNumber(value: unknown): number | undefined {
+  if (value === '' || value === null || value === undefined) return undefined
+  const normalized = Number(value)
+  return Number.isFinite(normalized) ? normalized : undefined
+}
+
+function normalizeContactQuery(params: {
+  per_page?: number
+  page?: number
+  stage?: number | string
+  owner_id?: number | string
+  company_id?: number | string
+  search?: string
+}) {
+  const stageValue =
+    typeof params.stage === 'string'
+      ? stageToCodeMap[params.stage]
+      : toQueryNumber(params.stage)
+
+  return {
+    page: params.page,
+    per_page: params.per_page,
+    stage: stageValue,
+    owner_id: toQueryNumber(params.owner_id),
+    company_id: toQueryNumber(params.company_id),
+    search: params.search || undefined,
+  }
+}
+
 export const contactsApi = {
-  list(params: { per_page?: number; page?: number; stage?: string; owner_id?: number | ''; company_id?: number | ''; search?: string }) {
-    return apiClient.get<ContactsListResponse>('/contacts', { params })
+  list(params: { per_page?: number; page?: number; stage?: number | string; owner_id?: number | string; company_id?: number | string; search?: string }) {
+    return apiClient.get<ContactsListResponse>('/contacts', { params: normalizeContactQuery(params) })
   },
   detail(contactId: number) {
     return apiClient.get<ContactDetailResponse>(`/contacts/${contactId}`)
@@ -83,6 +119,12 @@ export const contactsApi = {
   addActivity(contactId: number, payload: { type: string; note: string; occurred_at: string }) {
     return apiClient.post<ContactDetailResponse>(`/contacts/${contactId}/activities`, payload)
   },
+  attachCompany(contactId: number, companyId: number) {
+    return apiClient.post<ContactDetailResponse>(`/contacts/${contactId}/attach-company`, { company_id: companyId })
+  },
+  detachCompany(contactId: number) {
+    return apiClient.post<ContactDetailResponse>(`/contacts/${contactId}/detach-company`, {})
+  },
   importCsv(file: File) {
     const form = new FormData()
     form.append('file', file)
@@ -92,7 +134,7 @@ export const contactsApi = {
       },
     })
   },
-  exportCsv(params: { stage?: string; owner_id?: number | ''; company_id?: number | ''; search?: string }) {
-    return apiClient.get('/contacts/export', { params, responseType: 'blob' })
+  exportCsv(params: { stage?: number | string; owner_id?: number | string; company_id?: number | string; search?: string }) {
+    return apiClient.get('/contacts/export', { params: normalizeContactQuery(params), responseType: 'blob' })
   },
 }

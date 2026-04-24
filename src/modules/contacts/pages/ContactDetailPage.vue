@@ -1,124 +1,138 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useContactsStore } from '@/modules/contacts/store/contacts.store'
 import { useToast } from '@/shared/utils/useToast'
 
 const route = useRoute()
+const router = useRouter()
 const contactsStore = useContactsStore()
 const toast = useToast()
-const saving = ref(false)
-
-const updateForm = reactive({
-  lifecycle_stage: 'lead',
-  assigned_user_id: '',
-})
-
-const activityForm = reactive({
-  type: 'note',
-  note: '',
-  occurred_at: new Date().toISOString().slice(0, 16),
-})
+const companyIdToAttach = ref('')
+const companyActionLoading = ref(false)
 
 onMounted(async () => {
   const id = Number(route.params.id)
-  await contactsStore.fetchContactDetail(id)
-  if (contactsStore.selected) {
-    updateForm.lifecycle_stage = contactsStore.selected.lifecycle_stage
-    updateForm.assigned_user_id = contactsStore.selected.assigned_user?.id ? String(contactsStore.selected.assigned_user.id) : ''
-  }
+  await Promise.all([contactsStore.fetchContactDetail(id), contactsStore.fetchCompanyOptions()])
 })
 
-function stageToNumber(stage: string) {
-  if (stage === 'lead') return 0
-  if (stage === 'prospect') return 1
-  if (stage === 'customer') return 2
-  return 3
+function stageClass(stage: string) {
+  if (stage === 'lead') return 'bg-slate-100 text-slate-700'
+  if (stage === 'prospect') return 'bg-blue-50 text-blue-700'
+  if (stage === 'customer') return 'bg-emerald-50 text-emerald-700'
+  return 'bg-amber-50 text-amber-700'
 }
 
-async function saveContact() {
-  if (!contactsStore.selected || saving.value) return
-  saving.value = true
+async function attachCompany() {
+  if (!contactsStore.selected || !companyIdToAttach.value || companyActionLoading.value) return
+  companyActionLoading.value = true
   try {
-    await contactsStore.updateContact(contactsStore.selected.id, {
-      lifecycle_stage: stageToNumber(updateForm.lifecycle_stage),
-      assigned_user_id: Number(updateForm.assigned_user_id || 0) || undefined,
-    })
-    toast.success('Contact updated.')
+    await contactsStore.attachCompany(contactsStore.selected.id, Number(companyIdToAttach.value))
+    toast.success('Company attached to contact successfully.')
+    companyIdToAttach.value = ''
   } catch {
-    toast.error(contactsStore.message || 'Update failed.')
+    toast.error(contactsStore.message || 'Failed to attach company.')
   } finally {
-    saving.value = false
+    companyActionLoading.value = false
   }
 }
 
-async function addActivity() {
-  if (!contactsStore.selected || saving.value) return
-  saving.value = true
+async function detachCompany() {
+  if (!contactsStore.selected || companyActionLoading.value) return
+  companyActionLoading.value = true
   try {
-    await contactsStore.addActivity(contactsStore.selected.id, {
-      type: activityForm.type,
-      note: activityForm.note,
-      occurred_at: new Date(activityForm.occurred_at).toISOString(),
-    })
-    activityForm.note = ''
-    toast.success('Activity added.')
+    await contactsStore.detachCompany(contactsStore.selected.id)
+    toast.success('Company detached from contact successfully.')
   } catch {
-    toast.error(contactsStore.message || 'Activity create failed.')
+    toast.error(contactsStore.message || 'Failed to detach company.')
   } finally {
-    saving.value = false
+    companyActionLoading.value = false
   }
 }
 </script>
 
 <template>
   <section class="space-y-5">
-    <header>
-      <h2 class="text-xl font-bold text-slate-900">Contact Detail</h2>
-      <p class="text-sm text-slate-500">Lifecycle, assignment, and activity timeline.</p>
+    <header class="flex items-center justify-between gap-3">
+      <div>
+        <h2 class="text-xl font-bold text-slate-900">Contact Detail</h2>
+        <p class="text-sm text-slate-500">View contact information and quick actions.</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="rounded border px-3 py-1.5 text-sm">Edit Contact</button>
+        <button class="rounded border px-3 py-1.5 text-sm text-red-600">Delete</button>
+      </div>
     </header>
 
     <div v-if="contactsStore.loading" class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-4 text-sm text-slate-500">Loading contact...</div>
     <template v-else-if="contactsStore.selected">
-      <div class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-4">
-        <h3 class="text-lg font-semibold">{{ contactsStore.selected.first_name }} {{ contactsStore.selected.last_name }}</h3>
-        <p class="mt-1 text-sm text-slate-500">{{ contactsStore.selected.email || '-' }} | {{ contactsStore.selected.phone || '-' }}</p>
-        <p class="mt-2 text-sm text-slate-600">
-          Last updated by {{ contactsStore.selected.updated_by_user?.name || 'System' }} at
-          {{ new Date(contactsStore.selected.updated_at).toLocaleString() }}
-        </p>
+      <div class="grid gap-4 lg:grid-cols-3">
+        <div class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-4 lg:col-span-2">
+          <div class="flex items-start gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+              {{ (contactsStore.selected.first_name?.[0] || '') + (contactsStore.selected.last_name?.[0] || '') }}
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold">{{ contactsStore.selected.first_name }} {{ contactsStore.selected.last_name }}</h3>
+              <p class="text-sm text-slate-500">{{ contactsStore.selected.email || '-' }}</p>
+              <span class="mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold" :class="stageClass(contactsStore.selected.lifecycle_stage)">
+                {{ contactsStore.selected.lifecycle_stage }}
+              </span>
+            </div>
+          </div>
+          <div class="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
+            <p><span class="font-medium">Phone:</span> {{ contactsStore.selected.phone || '-' }}</p>
+            <p><span class="font-medium">Assigned:</span> {{ contactsStore.selected.assigned_user?.name || '-' }}</p>
+            <p><span class="font-medium">Company:</span> {{ contactsStore.selected.company?.name || '-' }}</p>
+            <p><span class="font-medium">Source:</span> {{ String(contactsStore.selected.meta?.source || '-') }}</p>
+            <p class="md:col-span-2">
+              <span class="font-medium">Last updated:</span>
+              {{ contactsStore.selected.updated_by_user?.name || 'System' }} · {{ new Date(contactsStore.selected.updated_at).toLocaleString() }}
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-4">
+            <h4 class="mb-3 text-sm font-semibold">Quick Actions</h4>
+            <div class="space-y-2">
+              <button class="w-full rounded border px-3 py-2 text-sm" @click="router.push('/app/companies')">Create Company</button>
+              <button class="w-full rounded border px-3 py-2 text-sm">Create Deal</button>
+              <button class="w-full rounded border px-3 py-2 text-sm">Log Activity</button>
+              <button class="w-full rounded border px-3 py-2 text-sm">Send Email</button>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-4">
+            <h4 class="mb-2 text-sm font-semibold">Contact Stats</h4>
+            <p class="text-xs text-slate-500">Total Activities: {{ (contactsStore.selected.activities || []).length }}</p>
+            <p class="text-xs text-slate-500">Created: {{ new Date(contactsStore.selected.created_at).toLocaleDateString() }}</p>
+          </div>
+        </div>
       </div>
 
       <div class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-4">
-        <h3 class="mb-3 text-sm font-semibold">Update Contact</h3>
-        <div class="grid gap-3 md:grid-cols-2">
-          <select v-model="updateForm.lifecycle_stage" class="rc-input">
-            <option value="lead">lead</option>
-            <option value="prospect">prospect</option>
-            <option value="customer">customer</option>
-            <option value="inactive">inactive</option>
-          </select>
-          <input v-model="updateForm.assigned_user_id" class="rc-input" type="number" placeholder="Assigned user ID" />
+        <h3 class="mb-3 text-sm font-semibold">Associated Company</h3>
+        <div class="space-y-3">
+          <button class="flex w-full items-center justify-between rounded-lg border border-[var(--rc-border-soft)] px-3 py-2 text-left text-sm hover:bg-slate-50">
+            <span>{{ contactsStore.selected.company?.name || 'No company linked' }}</span>
+            <span class="text-slate-400">></span>
+          </button>
+          <div class="grid gap-2 md:grid-cols-[1fr_auto_auto]">
+            <select v-model="companyIdToAttach" class="rc-input">
+              <option value="">Select company</option>
+              <option v-for="company in contactsStore.companyOptions" :key="company.id" :value="String(company.id)">
+                {{ company.name }}
+              </option>
+            </select>
+            <button class="rounded border px-3 py-2 text-sm" :disabled="companyActionLoading || !companyIdToAttach" @click="attachCompany">
+              Attach
+            </button>
+            <button class="rounded border px-3 py-2 text-sm text-red-600" :disabled="companyActionLoading || !contactsStore.selected.company" @click="detachCompany">
+              Detach
+            </button>
+          </div>
         </div>
-        <button class="btn-primary mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold" :disabled="saving" @click="saveContact">
-          <span v-if="saving" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-          Save Changes
-        </button>
-      </div>
-
-      <div class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-4">
-        <h3 class="mb-3 text-sm font-semibold">Add Activity</h3>
-        <div class="grid gap-3 md:grid-cols-3">
-          <select v-model="activityForm.type" class="rc-input">
-            <option value="note">note</option>
-            <option value="call">call</option>
-            <option value="meeting">meeting</option>
-            <option value="email">email</option>
-          </select>
-          <input v-model="activityForm.occurred_at" type="datetime-local" class="rc-input" />
-          <input v-model.trim="activityForm.note" class="rc-input md:col-span-3" placeholder="Activity note..." />
-        </div>
-        <button class="rounded border px-3 py-1.5 text-sm" :disabled="saving || !activityForm.note" @click="addActivity">Add Activity</button>
       </div>
 
       <div class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-4">

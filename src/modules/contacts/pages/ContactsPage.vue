@@ -3,20 +3,24 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PaginationControls from '@/shared/components/PaginationControls.vue'
 import { useContactsStore } from '@/modules/contacts/store/contacts.store'
-import { contactsApi, type ContactItem } from '@/modules/contacts/services/contacts.api'
+import type { ContactItem } from '@/modules/contacts/services/contacts.api'
 import { useToast } from '@/shared/utils/useToast'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
 
 const contactsStore = useContactsStore()
 const toast = useToast()
 const router = useRouter()
+const authStore = useAuthStore()
 const creating = ref(false)
 const saving = ref(false)
 const deletingId = ref<number | null>(null)
 const exporting = ref(false)
 const importing = ref(false)
+const showImportModal = ref(false)
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const selectedContact = ref<ContactItem | null>(null)
+const importFile = ref<File | null>(null)
 
 const createForm = reactive({
   first_name: '',
@@ -24,18 +28,37 @@ const createForm = reactive({
   email: '',
   phone: '',
   lifecycle_stage: 0,
-  company_id: '',
   assigned_user_id: '',
   meta_source: '',
   meta_city: '',
 })
 
 const editForm = reactive({
+  first_name: '',
+  last_name: '',
+  email: '',
+  phone: '',
   lifecycle_stage: 'lead',
+  company_id: '',
   assigned_user_id: '',
+  meta_source: '',
+  meta_city: '',
 })
 
-onMounted(() => contactsStore.fetchContacts())
+function firstValidationMessage(errors: Record<string, string[]>) {
+  const prioritized = ['email', 'first_name', 'last_name', 'phone', 'lifecycle_stage', 'assigned_user_id']
+  for (const key of prioritized) {
+    const message = errors[key]?.[0]
+    if (message) return message
+  }
+  const firstEntry = Object.values(errors)[0]
+  return firstEntry?.[0] || ''
+}
+
+onMounted(async () => {
+  await contactsStore.fetchContacts()
+  await Promise.all([contactsStore.fetchAssignableUsers(), contactsStore.fetchCompanyOptions()])
+})
 
 async function submitCreate() {
   if (creating.value) return
@@ -47,7 +70,6 @@ async function submitCreate() {
       email: createForm.email || undefined,
       phone: createForm.phone || undefined,
       lifecycle_stage: createForm.lifecycle_stage,
-      company_id: Number(createForm.company_id || 0) || undefined,
       assigned_user_id: Number(createForm.assigned_user_id || 0) || undefined,
       meta: {
         source: createForm.meta_source || undefined,
@@ -60,22 +82,92 @@ async function submitCreate() {
     createForm.email = ''
     createForm.phone = ''
     createForm.lifecycle_stage = 0
-    createForm.company_id = ''
     createForm.assigned_user_id = ''
     createForm.meta_source = ''
     createForm.meta_city = ''
     showCreateModal.value = false
   } catch {
-    toast.error(contactsStore.message || 'Create contact failed.')
+    toast.error(firstValidationMessage(contactsStore.errors) || contactsStore.message || 'Create contact failed.')
   } finally {
     creating.value = false
   }
 }
 
-function openEdit(contact: ContactItem) {
+async function openCreateModal() {
+  showCreateModal.value = true
+  await Promise.all([contactsStore.fetchAssignableUsers(), contactsStore.fetchCompanyOptions()])
+  const loggedInUserId = authStore.user?.id
+  if (!loggedInUserId) return
+
+  const hasLoggedInUser = contactsStore.assignableUsers.some((user) => user.id === loggedInUserId)
+  if (!hasLoggedInUser && authStore.user) {
+    contactsStore.assignableUsers.unshift({
+      id: authStore.user.id,
+      tenant_id: authStore.user.tenant_id,
+      team_id: authStore.user.team_id ?? null,
+      data_scope: authStore.user.data_scope,
+      role: authStore.user.role,
+      status: authStore.user.status ?? 'active',
+      name: authStore.user.name,
+      email: authStore.user.email,
+      email_verified_at: authStore.user.email_verified_at,
+      created_at: authStore.user.created_at,
+    })
+  }
+
+  if (!createForm.assigned_user_id) {
+    createForm.assigned_user_id = String(loggedInUserId)
+  }
+}
+
+async function openEdit(contact: ContactItem) {
   selectedContact.value = contact
+  await Promise.all([contactsStore.fetchAssignableUsers(), contactsStore.fetchCompanyOptions()])
+  editForm.first_name = contact.first_name
+  editForm.last_name = contact.last_name
+  editForm.email = contact.email || ''
+  editForm.phone = contact.phone || ''
   editForm.lifecycle_stage = contact.lifecycle_stage
+  editForm.company_id = contact.company?.id ? String(contact.company.id) : ''
   editForm.assigned_user_id = contact.assigned_user?.id ? String(contact.assigned_user.id) : ''
+  editForm.meta_source = String(contact.meta?.source || '')
+  editForm.meta_city = String(contact.meta?.city || '')
+
+  if (!editForm.assigned_user_id && authStore.user?.id) {
+    editForm.assigned_user_id = String(authStore.user.id)
+  }
+
+  const loggedInUserId = authStore.user?.id
+  if (loggedInUserId && !contactsStore.assignableUsers.some((user) => user.id === loggedInUserId) && authStore.user) {
+    contactsStore.assignableUsers.unshift({
+      id: authStore.user.id,
+      tenant_id: authStore.user.tenant_id,
+      team_id: authStore.user.team_id ?? null,
+      data_scope: authStore.user.data_scope,
+      role: authStore.user.role,
+      status: authStore.user.status ?? 'active',
+      name: authStore.user.name,
+      email: authStore.user.email,
+      email_verified_at: authStore.user.email_verified_at,
+      created_at: authStore.user.created_at,
+    })
+  }
+
+  if (contact.assigned_user && !contactsStore.assignableUsers.some((x) => x.id === contact.assigned_user?.id)) {
+    contactsStore.assignableUsers.unshift({
+      id: contact.assigned_user.id,
+      tenant_id: contact.tenant_id,
+      team_id: null,
+      data_scope: 'self',
+      role: 'user',
+      status: 'active',
+      name: contact.assigned_user.name,
+      email: contact.assigned_user.email,
+      email_verified_at: null,
+      created_at: contact.created_at,
+    })
+  }
+
   showEditModal.value = true
 }
 
@@ -118,31 +210,16 @@ async function removeContact(contactId: number) {
 async function onImportFile(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  if (!file || importing.value) return
-  importing.value = true
-  try {
-    const { data } = await contactsApi.importCsv(file)
-    toast.success(`${data.message} Created: ${data.data.created}, Skipped: ${data.data.skipped}`)
-    await contactsStore.fetchContacts(1, contactsStore.pagination.per_page)
-  } catch {
-    toast.error('Import failed.')
-  } finally {
-    importing.value = false
-    input.value = ''
-  }
+  if (!file) return
+  importFile.value = file
+  input.value = ''
 }
 
 async function exportCsv() {
   if (exporting.value) return
   exporting.value = true
   try {
-    const response = await contactsApi.exportCsv({
-      stage: contactsStore.filters.stage || undefined,
-      owner_id: contactsStore.filters.owner_id,
-      company_id: contactsStore.filters.company_id,
-      search: contactsStore.filters.search || undefined,
-    })
-    const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
+    const blob = await contactsStore.exportContacts()
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -154,6 +231,37 @@ async function exportCsv() {
   } finally {
     exporting.value = false
   }
+}
+
+async function importCsv() {
+  if (!importFile.value || importing.value) return
+  importing.value = true
+  try {
+    const result = await contactsStore.importContacts(importFile.value)
+    toast.success(`Import completed. Created: ${result.created}, Skipped: ${result.skipped}`)
+    showImportModal.value = false
+    importFile.value = null
+  } catch {
+    toast.error(contactsStore.message || 'Import failed.')
+  } finally {
+    importing.value = false
+  }
+}
+
+function downloadContactSampleCsv() {
+  const sample = [
+    'first_name,last_name,email,phone,lifecycle_stage,company_id,assigned_user_id,source,city',
+    'Ravi,Kumar,ravi@example.com,+91-9000000000,lead,10,22,website,Bangalore',
+  ].join('\n')
+  const blob = new Blob([sample], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', 'contacts-sample.csv')
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
 }
 
 function stageToNumber(stage: string) {
@@ -181,11 +289,10 @@ const hasContacts = computed(() => contactsStore.items.length > 0)
         <p class="text-sm text-slate-500">Core CRM contacts with lifecycle and activity support.</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button class="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" @click="showCreateModal = true">Create Contact</button>
-        <label class="rounded border px-3 py-1.5 text-sm" :class="{ 'opacity-60': importing }">
-          <input type="file" class="hidden" accept=".csv,text/csv" :disabled="importing" @change="onImportFile" />
+        <button class="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" @click="openCreateModal">Create Contact</button>
+        <button class="rounded border px-3 py-1.5 text-sm" :disabled="importing" @click="showImportModal = true">
           {{ importing ? 'Importing...' : 'Import CSV' }}
-        </label>
+        </button>
         <button class="rounded border px-3 py-1.5 text-sm" :disabled="exporting" @click="exportCsv">{{ exporting ? 'Exporting...' : 'Export CSV' }}</button>
       </div>
     </header>
@@ -255,6 +362,36 @@ const hasContacts = computed(() => contactsStore.items.length > 0)
       @change="(page) => contactsStore.fetchContacts(page, contactsStore.pagination.per_page)"
     />
 
+    <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+      <div class="w-full max-w-xl rounded-xl border border-[var(--rc-border-soft)] bg-white p-4 shadow-xl">
+        <div class="mb-3 flex items-center justify-between">
+          <h3 class="text-sm font-semibold">Import Contacts</h3>
+          <button class="rounded border px-2 py-1 text-xs" @click="showImportModal = false">Close</button>
+        </div>
+        <label class="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-teal-400 bg-teal-50/30 p-5 text-center">
+          <input type="file" class="hidden" accept=".csv,text/csv" :disabled="importing" @change="onImportFile" />
+          <p class="text-sm font-medium text-slate-700">Click to upload CSV</p>
+          <p class="mt-1 text-xs text-slate-500">Maximum file size: 10MB</p>
+          <p v-if="importFile" class="mt-2 text-xs font-semibold text-slate-700">{{ importFile.name }}</p>
+        </label>
+        <div class="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+          <p class="font-semibold">CSV format requirements:</p>
+          <p>- Required: first_name, last_name, email</p>
+          <p>- Optional: phone, lifecycle_stage, company_id or company_name, assigned_user_id, source, city</p>
+          <button class="mt-2 text-xs font-semibold text-[var(--rc-accent)] underline" @click="downloadContactSampleCsv">
+            Download sample CSV
+          </button>
+        </div>
+        <div class="mt-4 flex justify-end gap-2">
+          <button class="rounded border px-3 py-2 text-sm" @click="showImportModal = false">Cancel</button>
+          <button class="btn-primary inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold" :disabled="importing || !importFile" @click="importCsv">
+            <span v-if="importing" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+            {{ importing ? 'Importing...' : 'Import Contacts' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div class="w-full max-w-3xl rounded-xl border border-[var(--rc-border-soft)] bg-white p-4 shadow-xl">
         <div class="mb-3 flex items-center justify-between">
@@ -262,22 +399,51 @@ const hasContacts = computed(() => contactsStore.items.length > 0)
           <button class="rounded border px-2 py-1 text-xs" @click="showCreateModal = false">Close</button>
         </div>
         <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <input v-model.trim="createForm.first_name" class="rc-input" placeholder="First name" />
-          <input v-model.trim="createForm.last_name" class="rc-input" placeholder="Last name" />
-          <input v-model.trim="createForm.email" class="rc-input" placeholder="Email" />
-          <input v-model.trim="createForm.phone" class="rc-input" placeholder="Phone" />
-          <select v-model="createForm.lifecycle_stage" class="rc-input">
-            <option :value="0">lead</option>
-            <option :value="1">prospect</option>
-            <option :value="2">customer</option>
-            <option :value="3">inactive</option>
-          </select>
-          <input v-model="createForm.company_id" type="number" class="rc-input" placeholder="Company ID" />
-          <input v-model="createForm.assigned_user_id" type="number" class="rc-input" placeholder="Assigned user ID" />
-          <input v-model.trim="createForm.meta_source" class="rc-input" placeholder="Meta source (optional)" />
-          <input v-model.trim="createForm.meta_city" class="rc-input" placeholder="Meta city (optional)" />
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">First Name <span class="text-red-500">*</span></label>
+            <input v-model.trim="createForm.first_name" class="rc-input" placeholder="e.g. Ravi" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Last Name <span class="text-red-500">*</span></label>
+            <input v-model.trim="createForm.last_name" class="rc-input" placeholder="e.g. Kumar" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Email</label>
+            <input v-model.trim="createForm.email" class="rc-input" placeholder="e.g. ravi@example.com" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Phone</label>
+            <input v-model.trim="createForm.phone" class="rc-input" placeholder="e.g. +91-9000000000" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Lifecycle Stage <span class="text-red-500">*</span></label>
+            <select v-model="createForm.lifecycle_stage" class="rc-input">
+              <option :value="0">lead</option>
+              <option :value="1">prospect</option>
+              <option :value="2">customer</option>
+              <option :value="3">inactive</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Assigned User</label>
+            <select v-model="createForm.assigned_user_id" class="rc-input" @focus="contactsStore.fetchAssignableUsers()">
+              <option value="">Select user</option>
+              <option v-for="user in contactsStore.assignableUsers" :key="user.id" :value="String(user.id)">
+                {{ user.name }} ({{ user.email }})
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Source</label>
+            <input v-model.trim="createForm.meta_source" class="rc-input" placeholder="e.g. website" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">City</label>
+            <input v-model.trim="createForm.meta_city" class="rc-input" placeholder="e.g. Bangalore" />
+          </div>
         </div>
         <p v-if="contactsStore.errors.first_name?.[0]" class="mt-1 text-sm text-red-600">{{ contactsStore.errors.first_name[0] }}</p>
+        <p v-if="contactsStore.errors.email?.[0]" class="mt-1 text-sm text-red-600">{{ contactsStore.errors.email[0] }}</p>
         <div class="mt-4 flex justify-end gap-2">
           <button class="rounded border px-3 py-2 text-sm" @click="showCreateModal = false">Cancel</button>
           <button class="btn-primary inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold" :disabled="creating" @click="submitCreate">
@@ -289,19 +455,63 @@ const hasContacts = computed(() => contactsStore.items.length > 0)
     </div>
 
     <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div class="w-full max-w-lg rounded-xl border border-[var(--rc-border-soft)] bg-white p-4 shadow-xl">
+      <div class="w-full max-w-3xl rounded-xl border border-[var(--rc-border-soft)] bg-white p-4 shadow-xl">
         <div class="mb-3 flex items-center justify-between">
           <h3 class="text-sm font-semibold">Edit Contact</h3>
           <button class="rounded border px-2 py-1 text-xs" @click="closeEdit">Close</button>
         </div>
-        <div class="grid gap-3">
-          <select v-model="editForm.lifecycle_stage" class="rc-input">
-            <option value="lead">lead</option>
-            <option value="prospect">prospect</option>
-            <option value="customer">customer</option>
-            <option value="inactive">inactive</option>
-          </select>
-          <input v-model="editForm.assigned_user_id" type="number" class="rc-input" placeholder="Assigned user ID" />
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">First Name</label>
+            <input v-model="editForm.first_name" class="rc-input" disabled />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Last Name</label>
+            <input v-model="editForm.last_name" class="rc-input" disabled />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Email</label>
+            <input v-model="editForm.email" class="rc-input" disabled />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Phone</label>
+            <input v-model="editForm.phone" class="rc-input" disabled />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Lifecycle Stage</label>
+            <select v-model="editForm.lifecycle_stage" class="rc-input">
+              <option value="lead">lead</option>
+              <option value="prospect">prospect</option>
+              <option value="customer">customer</option>
+              <option value="inactive">inactive</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Company</label>
+            <select v-model="editForm.company_id" class="rc-input" disabled>
+              <option value="">Select company</option>
+              <option v-for="company in contactsStore.companyOptions" :key="company.id" :value="String(company.id)">
+                {{ company.name }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Assigned User</label>
+            <select v-model="editForm.assigned_user_id" class="rc-input" @focus="contactsStore.fetchAssignableUsers()">
+              <option value="">Select user</option>
+              <option v-for="user in contactsStore.assignableUsers" :key="user.id" :value="String(user.id)">
+                {{ user.name }} ({{ user.email }})
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">Source</label>
+            <input v-model="editForm.meta_source" class="rc-input" disabled />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600">City</label>
+            <input v-model="editForm.meta_city" class="rc-input" disabled />
+          </div>
         </div>
         <div class="mt-4 flex justify-end gap-2">
           <button class="rounded border px-3 py-2 text-sm" @click="closeEdit">Cancel</button>
