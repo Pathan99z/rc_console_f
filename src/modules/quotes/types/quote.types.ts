@@ -63,6 +63,7 @@ export type QuoteProductPayload = {
   quantity: number
   unit_price?: number
   tax_rate?: number
+  discount?: number
 }
 
 export type QuotePayload = {
@@ -78,6 +79,20 @@ export type QuotePayload = {
 
 export type QuoteUpdatePayload = Partial<Omit<QuotePayload, 'products'>> & {
   products?: QuoteProductPayload[]
+}
+
+export type QuoteSendPayload = {
+  email?: string
+  message?: string
+  layout_code?: string
+  attach_pdf?: boolean
+}
+
+export type QuoteLayoutItem = {
+  code: string
+  name: string
+  description?: string | null
+  pdf_view?: string | null
 }
 
 export type QuoteListQuery = {
@@ -100,4 +115,52 @@ export type QuoteResponse = {
   success: boolean
   message: string
   data: { quote: QuoteModel }
+}
+
+export type QuoteLayoutsResponse = {
+  success: boolean
+  message: string
+  data: { items: QuoteLayoutItem[] }
+}
+
+export type QuotePreviewProductPayload = {
+  product_id: number
+  quantity: number
+  unit_price?: number
+  tax_rate?: number
+  discount?: number
+}
+
+export type QuotePreviewPayload = {
+  deal_id?: number | null
+  target_currency?: string
+  discount_total?: number
+  products: QuotePreviewProductPayload[]
+}
+
+export type QuotePreviewItem = {
+  product_id: number
+  product_name?: string
+  quantity: number
+  unit_price: number
+  tax_rate: number
+  line_subtotal: number
+  line_tax_total: number
+  line_discount_total: number
+  line_total: number
+}
+
+export type QuotePreviewData = {
+  items: QuotePreviewItem[]
+  subtotal: number
+  tax_total: number
+  discount_total: number
+  total: number
+  currency_code?: string
+}
+
+export type QuotePreviewResponse = {
+  success: boolean
+  message: string
+  data: QuotePreviewData
 }

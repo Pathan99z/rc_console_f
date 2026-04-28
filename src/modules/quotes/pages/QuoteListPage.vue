@@ -29,11 +29,15 @@ async function resetFilters() {
 }
 
 function openQuote(quoteId: number) {
-  void router.push(`/app/quotes/${quoteId}`)
+  router.push(`/app/quotes/${quoteId}`).catch(() => undefined)
+}
+
+function editQuote(quoteId: number) {
+  router.push(`/app/quotes/${quoteId}/edit`).catch(() => undefined)
 }
 
 async function removeQuote(quoteId: number) {
-  if (!window.confirm('Delete this quote?')) return
+  if (!globalThis.confirm('Delete this quote?')) return
   try {
     await quotesStore.deleteQuote(quoteId)
     toast.success('Quote deleted successfully.')
@@ -83,6 +87,7 @@ onMounted(() => {
       :items="quotesStore.items"
       :deleting-id="quotesStore.deletingId"
       @view="openQuote"
+      @edit="editQuote"
       @delete="removeQuote"
     />
 

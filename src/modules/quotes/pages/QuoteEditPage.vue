@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, reactive, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '@/shared/utils/useToast'
 import QuoteForm from '@/modules/quotes/components/QuoteForm.vue'
 import QuoteSummary from '@/modules/quotes/components/QuoteSummary.vue'
@@ -8,10 +8,11 @@ import { useQuotesStore } from '@/modules/quotes/store/quote.store'
 import type { QuoteProductRow } from '@/modules/quotes/components/QuoteProductTable.vue'
 import type { DealItem } from '@/modules/deals/services/deals.api'
 
+const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const quotesStore = useQuotesStore()
-const selectedLayoutCode = ref('')
+const quoteId = Number(route.params.id || 0)
 
 const form = reactive({
   contact_id: '',
@@ -57,6 +58,41 @@ const selectedDealCurrency = computed(() => {
   const deal = quotesStore.deals.find((item) => item.id === selectedDealId) as DealItem & { currency_code?: string }
   return deal?.currency_code || ''
 })
+
+function syncFormFromCurrent() {
+  const quote = quotesStore.current
+  if (!quote) return
+  form.contact_id = quote.contact?.id ? String(quote.contact.id) : ''
+  form.deal_id = quote.deal?.id ? String(quote.deal.id) : ''
+  form.quote_type = String(quote.quote_type ?? 0)
+  form.notes = quote.notes || ''
+  form.valid_until = quote.valid_until ? String(quote.valid_until).slice(0, 10) : ''
+  form.discount_total = String(quote.discount_total || 0)
+  form.currency_code = quote.currency_code || 'ZAR'
+  form.products = (quote.items || []).map((item) => ({
+    product_id: String(item.product_id),
+    quantity: String(item.quantity),
+    unit_price: String(item.unit_price),
+    tax_rate: String(item.tax_rate),
+    discount: String(item.discount || 0),
+  }))
+  if (!form.products.length) {
+    form.products = [{ product_id: '', quantity: '1', unit_price: '', tax_rate: '', discount: '' }]
+  }
+}
+
+async function bootstrap() {
+  if (!quoteId) return
+  await Promise.all([quotesStore.fetchContactOptions(), quotesStore.fetchProductOptions(), quotesStore.fetchQuote(quoteId)])
+  await quotesStore.fetchDealOptions(quotesStore.current?.contact?.id)
+  syncFormFromCurrent()
+  if (form.deal_id) {
+    const detail = await quotesStore.fetchSelectedDealDetail(Number(form.deal_id))
+    form.currency_code = detail?.currency_code || form.currency_code
+  } else {
+    quotesStore.clearSelectedDealDetail()
+  }
+}
 
 async function onContactChange(contactId: number) {
   if (!contactId) return
@@ -108,14 +144,15 @@ function triggerPreviewDebounced() {
 }
 
 async function submit() {
+  if (!quoteId) return
   try {
-    const quote = await quotesStore.createQuote({
-      contact_id: Number(form.contact_id),
+    await quotesStore.updateQuote(quoteId, {
+      contact_id: Number(form.contact_id || 0) || undefined,
       deal_id: form.deal_id ? Number(form.deal_id) : null,
       quote_type: Number(form.quote_type) as 0 | 1,
       notes: form.notes || undefined,
       valid_until: form.valid_until || undefined,
-      discount_total: Number(form.discount_total || 0),
+      discount_total: toNumber(form.discount_total),
       currency_code: selectedDealCurrency.value || form.currency_code || undefined,
       products: form.products
         .filter((row) => row.product_id && toNumber(row.quantity) > 0)
@@ -127,30 +164,15 @@ async function submit() {
           discount: row.discount === '' ? undefined : toNumber(row.discount),
         })),
     })
-    if (selectedLayoutCode.value) {
-      globalThis.localStorage.setItem(`quote-send-layout:${quote.id}`, selectedLayoutCode.value)
-    }
-    toast.success('Quote created successfully.')
-    router.push({
-      path: `/app/quotes/${quote.id}`,
-      query: selectedLayoutCode.value ? { sendLayout: selectedLayoutCode.value } : undefined,
-    }).catch(() => undefined)
+    toast.success('Quote updated successfully.')
+    router.push(`/app/quotes/${quoteId}`).catch(() => undefined)
   } catch {
-    toast.error(quotesStore.message || 'Unable to create quote.')
+    toast.error(quotesStore.message || 'Unable to update quote.')
   }
 }
 
-onMounted(async () => {
-  await Promise.all([
-    quotesStore.fetchContactOptions(),
-    quotesStore.fetchProductOptions(),
-    quotesStore.fetchDealOptions(),
-    quotesStore.fetchQuoteLayouts(),
-  ])
-  if (!selectedLayoutCode.value && quotesStore.layouts.length) {
-    selectedLayoutCode.value = quotesStore.layouts[0].code
-  }
-  triggerPreviewDebounced()
+onMounted(() => {
+  bootstrap().catch(() => undefined)
 })
 
 watch(
@@ -180,65 +202,42 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="space-y-5">
-    <header class="flex items-center justify-between">
+    <header class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 class="text-xl font-bold text-slate-900">Create Quote</h2>
-        <p class="text-sm text-slate-500">Build quote using customer, deal, products, and live totals.</p>
+        <h2 class="text-xl font-bold text-slate-900">Edit Quote</h2>
+        <p class="text-sm text-slate-500">Update quote details with prefilled customer, deal, and product values.</p>
       </div>
-      <button class="rounded border px-3 py-1.5 text-sm" @click="$router.push('/app/quotes')">Back</button>
+      <button class="rounded border px-3 py-1.5 text-sm" @click="$router.push(`/app/quotes/${quoteId}`)">Back</button>
     </header>
 
-    <QuoteForm
-      v-model="form"
-      :contacts="quotesStore.contacts"
-      :deals="quotesStore.deals"
-      :products="quotesStore.products"
-      :deal-currency-code="selectedDealCurrency"
-      :currency-options="['ZAR', 'USD', 'EUR', 'GBP', 'INR']"
-      :loading="quotesStore.saving"
-      :errors="quotesStore.errors"
-      @contact-change="onContactChange"
-      @deal-change="onDealChange"
-      @live-change="triggerPreviewDebounced"
-      @submit="submit"
-    />
+    <div v-if="quotesStore.loading && !quotesStore.current" class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-6 text-center text-sm text-slate-500">
+      Loading quote...
+    </div>
 
-    <QuoteSummary
-      :subtotal="summary.subtotal"
-      :tax-total="summary.taxTotal"
-      :discount-total="summary.discount"
-      :final-total="summary.finalTotal"
-      :currency-code="form.currency_code"
-      :calculating="quotesStore.previewing"
-    />
+    <template v-else>
+      <QuoteForm
+        v-model="form"
+        :contacts="quotesStore.contacts"
+        :deals="quotesStore.deals"
+        :products="quotesStore.products"
+        :deal-currency-code="selectedDealCurrency"
+        :currency-options="['ZAR', 'USD', 'EUR', 'GBP', 'INR']"
+        :loading="quotesStore.saving"
+        :errors="quotesStore.errors"
+        @contact-change="onContactChange"
+        @deal-change="onDealChange"
+        @live-change="triggerPreviewDebounced"
+        @submit="submit"
+      />
 
-    <section class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-4">
-      <div class="mb-3">
-        <h4 class="font-semibold text-slate-900">Email Layout Selection</h4>
-        <p class="text-sm text-slate-500">Choose a layout now. This selected layout will be used in Send Quote email by default.</p>
-      </div>
-
-      <div class="grid gap-3 md:grid-cols-4">
-        <button
-          v-for="layout in quotesStore.layouts"
-          :key="layout.code"
-          type="button"
-          class="rounded-lg border p-3 text-left transition"
-          :class="selectedLayoutCode === layout.code ? 'border-indigo-400 bg-indigo-50' : 'border-[var(--rc-border-soft)] hover:bg-slate-50'"
-          @click="selectedLayoutCode = layout.code"
-        >
-          <p class="font-medium text-slate-900">{{ layout.name }}</p>
-          <p class="mt-1 text-xs text-slate-500">{{ layout.description || 'Default layout template.' }}</p>
-        </button>
-      </div>
-
-      <div class="mt-3 rounded-lg border border-[var(--rc-border-soft)] bg-slate-50 p-3 text-sm">
-        <p class="font-semibold text-slate-800">Selected Layout</p>
-        <p class="mt-1 text-slate-600">
-          {{ quotesStore.layouts.find((item) => item.code === selectedLayoutCode)?.name || '-' }} -
-          {{ quotesStore.layouts.find((item) => item.code === selectedLayoutCode)?.description || 'No description available.' }}
-        </p>
-      </div>
-    </section>
+      <QuoteSummary
+        :subtotal="summary.subtotal"
+        :tax-total="summary.taxTotal"
+        :discount-total="summary.discount"
+        :final-total="summary.finalTotal"
+        :currency-code="selectedDealCurrency || form.currency_code"
+        :calculating="quotesStore.previewing"
+      />
+    </template>
   </section>
 </template>

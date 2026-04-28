@@ -38,17 +38,26 @@ const emit = defineEmits<{
     products: QuoteProductRow[]
   }): void
   (e: 'contact-change', contactId: number): void
+  (e: 'deal-change', dealId: number): void
+  (e: 'live-change'): void
   (e: 'submit'): void
 }>()
 
 function patch(partial: Partial<typeof props.modelValue>) {
   Object.assign(props.modelValue, partial)
   emit('update:modelValue', { ...props.modelValue, ...partial })
+  emit('live-change')
 }
 
 function onContactChange(value: string) {
   patch({ contact_id: value, deal_id: '', auto_create_deal: false })
   emit('contact-change', Number(value || 0))
+  emit('deal-change', 0)
+}
+
+function onDealChange(value: string) {
+  patch({ deal_id: value })
+  emit('deal-change', Number(value || 0))
 }
 
 const defaultCurrencyOptions = ['ZAR', 'USD', 'EUR', 'GBP', 'INR']
@@ -60,16 +69,16 @@ const defaultCurrencyOptions = ['ZAR', 'USD', 'EUR', 'GBP', 'INR']
       <h4 class="mb-3 font-semibold text-slate-900">Quote Information</h4>
       <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         <div>
-          <label class="mb-1 block text-xs font-semibold text-slate-600">Customer <span class="text-red-500">*</span></label>
-          <select class="rc-input" :value="modelValue.contact_id" @change="onContactChange(($event.target as HTMLSelectElement).value)">
+          <label for="quote-contact-id" class="mb-1 block text-xs font-semibold text-slate-600">Customer <span class="text-red-500">*</span></label>
+          <select id="quote-contact-id" class="rc-input" :value="modelValue.contact_id" @change="onContactChange(($event.target as HTMLSelectElement).value)">
             <option value="">Select contact</option>
             <option v-for="contact in contacts" :key="contact.id" :value="String(contact.id)">{{ contact.first_name }} {{ contact.last_name }}</option>
           </select>
           <p v-if="errors?.contact_id?.[0]" class="mt-1 text-xs text-rose-600">{{ errors.contact_id[0] }}</p>
         </div>
         <div>
-          <label class="mb-1 block text-xs font-semibold text-slate-600">Deal</label>
-          <select class="rc-input" :value="modelValue.deal_id" @change="patch({ deal_id: ($event.target as HTMLSelectElement).value })">
+          <label for="quote-deal-id" class="mb-1 block text-xs font-semibold text-slate-600">Deal</label>
+          <select id="quote-deal-id" class="rc-input" :value="modelValue.deal_id" @change="onDealChange(($event.target as HTMLSelectElement).value)">
             <option value="">None selected</option>
             <option v-for="deal in deals" :key="deal.id" :value="String(deal.id)">{{ deal.name }}</option>
           </select>
@@ -81,35 +90,37 @@ const defaultCurrencyOptions = ['ZAR', 'USD', 'EUR', 'GBP', 'INR']
           </label>
         </div>
         <div>
-          <label class="mb-1 block text-xs font-semibold text-slate-600">Quote Type</label>
-          <select class="rc-input" :value="modelValue.quote_type" @change="patch({ quote_type: ($event.target as HTMLSelectElement).value })">
+          <label for="quote-type" class="mb-1 block text-xs font-semibold text-slate-600">Quote Type</label>
+          <select id="quote-type" class="rc-input" :value="modelValue.quote_type" @change="patch({ quote_type: ($event.target as HTMLSelectElement).value })">
             <option value="0">Standard</option>
             <option value="1">Custom</option>
           </select>
         </div>
         <div>
-          <label class="mb-1 block text-xs font-semibold text-slate-600">Valid Until</label>
-          <input class="rc-input" type="date" :value="modelValue.valid_until" @input="patch({ valid_until: ($event.target as HTMLInputElement).value })" />
+          <label for="quote-valid-until" class="mb-1 block text-xs font-semibold text-slate-600">Valid Until</label>
+          <input id="quote-valid-until" class="rc-input" type="date" :value="modelValue.valid_until" @input="patch({ valid_until: ($event.target as HTMLInputElement).value })" />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-semibold text-slate-600">Discount Total</label>
-          <input class="rc-input" type="number" min="0" step="0.01" :value="modelValue.discount_total" @input="patch({ discount_total: ($event.target as HTMLInputElement).value })" />
+          <label for="quote-discount-total" class="mb-1 block text-xs font-semibold text-slate-600">Discount Total</label>
+          <input id="quote-discount-total" class="rc-input" type="number" min="0" step="0.01" :value="modelValue.discount_total" @input="patch({ discount_total: ($event.target as HTMLInputElement).value })" />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-semibold text-slate-600">Currency</label>
-          <input v-if="dealCurrencyCode" class="rc-input bg-slate-50" :value="dealCurrencyCode" readonly />
+          <label for="quote-currency" class="mb-1 block text-xs font-semibold text-slate-600">Currency</label>
+          <input id="quote-currency" v-if="modelValue.deal_id" class="rc-input bg-slate-50" :value="dealCurrencyCode || modelValue.currency_code" readonly />
           <select
             v-else
+            id="quote-currency"
             class="rc-input"
             :value="modelValue.currency_code"
             @change="patch({ currency_code: ($event.target as HTMLSelectElement).value })"
           >
             <option v-for="currency in currencyOptions || defaultCurrencyOptions" :key="currency" :value="currency">{{ currency }}</option>
           </select>
+          <p v-if="modelValue.deal_id" class="mt-1 text-xs text-slate-500">Currency is locked to selected deal currency.</p>
         </div>
         <div class="md:col-span-2 xl:col-span-3">
-          <label class="mb-1 block text-xs font-semibold text-slate-600">Notes</label>
-          <textarea class="rc-input" rows="3" :value="modelValue.notes" @input="patch({ notes: ($event.target as HTMLTextAreaElement).value })"></textarea>
+          <label for="quote-notes" class="mb-1 block text-xs font-semibold text-slate-600">Notes</label>
+          <textarea id="quote-notes" class="rc-input" rows="3" :value="modelValue.notes" @input="patch({ notes: ($event.target as HTMLTextAreaElement).value })"></textarea>
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'view', id: number): void
+  (e: 'edit', id: number): void
   (e: 'delete', id: number): void
 }>()
 </script>
@@ -41,6 +42,9 @@ const emit = defineEmits<{
               <div class="flex items-center gap-2">
                 <button class="rounded border p-2 text-slate-700 hover:bg-slate-50" title="View" @click="emit('view', quote.id)">
                   <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+                </button>
+                <button class="rounded border p-2 text-sky-700 hover:bg-sky-50" title="Edit" @click="emit('edit', quote.id)">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6.232-6.232a2.5 2.5 0 113.536 3.536L12.536 14.536A2 2 0 0111.12 15.12L8 16l.88-3.12A2 2 0 019.464 11.464z"/></svg>
                 </button>
                 <button class="rounded border p-2 text-rose-700 hover:bg-rose-50 disabled:opacity-60" :disabled="deletingId === quote.id" title="Delete" @click="emit('delete', quote.id)">
                   <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M8 6V4h8v2m-1 0v14H9V6"/></svg>

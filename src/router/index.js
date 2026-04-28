@@ -22,6 +22,7 @@ import CollateralListPage from '../modules/collaterals/pages/CollateralListPage.
 import QuoteListPage from '../modules/quotes/pages/QuoteListPage.vue'
 import QuoteCreatePage from '../modules/quotes/pages/QuoteCreatePage.vue'
 import QuoteDetailPage from '../modules/quotes/pages/QuoteDetailPage.vue'
+import QuoteEditPage from '../modules/quotes/pages/QuoteEditPage.vue'
 import PublicQuotePage from '../modules/quotes/pages/PublicQuotePage.vue'
 import ProtectedLayout from '@/shared/components/ProtectedLayout.vue'
 import { authAndRoleGuard } from '@/router/guards/accessGuards'
@@ -54,6 +55,7 @@ const routes = [
       { path: 'collaterals', component: CollateralListPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
       { path: 'quotes', component: QuoteListPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
       { path: 'quotes/create', component: QuoteCreatePage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
+      { path: 'quotes/:id/edit', component: QuoteEditPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
       { path: 'quotes/:id', component: QuoteDetailPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
     ],
   },

@@ -2,7 +2,16 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { toApiError } from '@/core/http/apiClient'
 import { quotesApi } from '@/modules/quotes/services/quote.api'
-import type { QuoteModel, QuotePayload, QuoteStatus, QuoteUpdatePayload } from '@/modules/quotes/types/quote.types'
+import type {
+  QuoteLayoutItem,
+  QuoteModel,
+  QuotePayload,
+  QuotePreviewData,
+  QuotePreviewPayload,
+  QuoteSendPayload,
+  QuoteStatus,
+  QuoteUpdatePayload,
+} from '@/modules/quotes/types/quote.types'
 import type { Pagination } from '@/modules/users/services/users.api'
 import { contactsApi, type ContactItem } from '@/modules/contacts/services/contacts.api'
 import { dealsApi, type DealItem } from '@/modules/deals/services/deals.api'
@@ -17,13 +26,18 @@ export const useQuotesStore = defineStore('quotes', () => {
   const publicQuote = ref<QuoteModel | null>(null)
   const contacts = ref<ContactItem[]>([])
   const deals = ref<DealItem[]>([])
+  const selectedDealDetail = ref<DealItem | null>(null)
+  const layouts = ref<QuoteLayoutItem[]>([])
   const products = ref<ProductItem[]>([])
   const pagination = ref<Pagination>(defaultPagination)
   const loading = ref(false)
   const saving = ref(false)
   const deletingId = ref<number | null>(null)
   const statusUpdating = ref(false)
+  const sending = ref(false)
+  const previewing = ref(false)
   const uploadingAttachment = ref(false)
+  const preview = ref<QuotePreviewData | null>(null)
   const message = ref('')
   const errors = ref<Record<string, string[]>>({})
   const filters = ref({
@@ -147,6 +161,26 @@ export const useQuotesStore = defineStore('quotes', () => {
     }
   }
 
+  async function sendQuote(quoteId: number, payload: QuoteSendPayload = {}) {
+    sending.value = true
+    errors.value = {}
+    try {
+      const { data } = await quotesApi.send(quoteId, payload)
+      message.value = data.message
+      current.value = data.data.quote
+      const index = items.value.findIndex((item) => item.id === quoteId)
+      if (index >= 0) items.value[index] = data.data.quote
+      return data.data.quote
+    } catch (error) {
+      const normalized = toApiError(error)
+      message.value = normalized.message
+      errors.value = normalized.fieldErrors
+      throw normalized
+    } finally {
+      sending.value = false
+    }
+  }
+
   async function uploadAttachment(quoteId: number, payload: { name: string; file: File }) {
     uploadingAttachment.value = true
     errors.value = {}
@@ -162,6 +196,26 @@ export const useQuotesStore = defineStore('quotes', () => {
     } finally {
       uploadingAttachment.value = false
     }
+  }
+
+  async function previewQuotePrices(payload: QuotePreviewPayload) {
+    previewing.value = true
+    try {
+      const { data } = await quotesApi.previewPrices(payload)
+      preview.value = data.data
+      return preview.value
+    } catch (error) {
+      const normalized = toApiError(error)
+      message.value = normalized.message
+      errors.value = normalized.fieldErrors
+      throw normalized
+    } finally {
+      previewing.value = false
+    }
+  }
+
+  function clearPreview() {
+    preview.value = null
   }
 
   async function fetchPublicQuote(token: string) {
@@ -217,10 +271,42 @@ export const useQuotesStore = defineStore('quotes', () => {
     return contacts.value
   }
 
+  async function fetchQuoteLayouts() {
+    try {
+      const { data } = await quotesApi.listLayouts()
+      layouts.value = data.data.items || []
+      return layouts.value
+    } catch (error) {
+      const normalized = toApiError(error)
+      message.value = normalized.message
+      throw normalized
+    }
+  }
+
   async function fetchDealOptions(contactId?: number) {
-    const { data } = await dealsApi.list({ page: 1, per_page: 100, search: undefined })
-    deals.value = contactId ? data.data.items.filter((item) => item.contact?.id === contactId || item.contact_id === contactId) : data.data.items
+    const { data } = await dealsApi.list({
+      page: 1,
+      per_page: 15,
+      contact_id: contactId || undefined,
+      status: 0,
+      search: undefined,
+    })
+    deals.value = data.data.items
     return deals.value
+  }
+
+  async function fetchSelectedDealDetail(dealId: number) {
+    if (!dealId) {
+      selectedDealDetail.value = null
+      return null
+    }
+    const { data } = await dealsApi.detail(dealId)
+    selectedDealDetail.value = data.data.deal
+    return selectedDealDetail.value
+  }
+
+  function clearSelectedDealDetail() {
+    selectedDealDetail.value = null
   }
 
   async function fetchProductOptions() {
@@ -235,15 +321,20 @@ export const useQuotesStore = defineStore('quotes', () => {
     publicQuote,
     contacts,
     deals,
+    selectedDealDetail,
+    layouts,
     products,
     pagination,
     loading,
     saving,
     deletingId,
     statusUpdating,
+    sending,
+    previewing,
     uploadingAttachment,
     message,
     errors,
+    preview,
     filters,
     fetchQuotes,
     fetchQuote,
@@ -251,12 +342,18 @@ export const useQuotesStore = defineStore('quotes', () => {
     updateQuote,
     deleteQuote,
     updateStatus,
+    sendQuote,
+    previewQuotePrices,
+    clearPreview,
     uploadAttachment,
     fetchPublicQuote,
     acceptQuote,
     rejectQuote,
     fetchContactOptions,
+    fetchQuoteLayouts,
     fetchDealOptions,
+    fetchSelectedDealDetail,
+    clearSelectedDealDetail,
     fetchProductOptions,
   }
 })

@@ -60,6 +60,7 @@ export const dealsApi = {
   list(params: {
     per_page?: number
     page?: number
+    contact_id?: number | string
     pipeline_id?: number | string
     pipeline_stage_id?: number | string
     owner_user_id?: number | string
@@ -71,6 +72,7 @@ export const dealsApi = {
       params: {
         page: params.page,
         per_page: params.per_page,
+        contact_id: toOptionalNumber(params.contact_id),
         pipeline_id: toOptionalNumber(params.pipeline_id),
         pipeline_stage_id: toOptionalNumber(params.pipeline_stage_id),
         owner_user_id: toOptionalNumber(params.owner_user_id),

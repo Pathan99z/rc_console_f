@@ -1,9 +1,13 @@
 import { apiClient } from '@/core/http/apiClient'
 import type {
+  QuoteLayoutsResponse,
   QuoteListQuery,
   QuotePayload,
+  QuotePreviewPayload,
+  QuotePreviewResponse,
   QuoteResponse,
   QuotesListResponse,
+  QuoteSendPayload,
   QuoteStatus,
   QuoteUpdatePayload,
 } from '@/modules/quotes/types/quote.types'
@@ -15,6 +19,9 @@ function toOptionalNumber(value: unknown): number | undefined {
 }
 
 export const quotesApi = {
+  listLayouts() {
+    return apiClient.get<QuoteLayoutsResponse>('/quote-layouts')
+  },
   list(params: QuoteListQuery) {
     return apiClient.get<QuotesListResponse>('/quotes', {
       params: {
@@ -31,6 +38,9 @@ export const quotesApi = {
   create(payload: QuotePayload) {
     return apiClient.post<QuoteResponse>('/quotes', payload)
   },
+  previewPrices(payload: QuotePreviewPayload) {
+    return apiClient.post<QuotePreviewResponse>('/quotes/preview-prices', payload)
+  },
   detail(quoteId: number) {
     return apiClient.get<QuoteResponse>(`/quotes/${quoteId}`)
   },
@@ -42,6 +52,9 @@ export const quotesApi = {
   },
   updateStatus(quoteId: number, status: QuoteStatus) {
     return apiClient.patch<QuoteResponse>(`/quotes/${quoteId}/status`, { status })
+  },
+  send(quoteId: number, payload: QuoteSendPayload = {}) {
+    return apiClient.post<QuoteResponse>(`/quotes/${quoteId}/send`, payload)
   },
   uploadAttachment(quoteId: number, payload: { name: string; file: File }) {
     const form = new FormData()
