@@ -140,6 +140,34 @@ body::before {
   z-index: 0;
 }
 
+/* ==========================================================================
+   GLOBAL BUTTON STANDARD (applies to all current and future modules)
+   - Every <button> gets consistent hover + active feedback by default.
+   - Variant classes (.btn-primary/.btn-secondary/.btn-tertiary) control color.
+   - Keep interaction behavior consistent across the app.
+   ========================================================================== */
+/* Global button interaction baseline */
+button {
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+button:hover:not(:disabled) {
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* Text Gradient Style */
 .text-gradient,
 .text-gradient-brand {
@@ -218,21 +246,65 @@ body::before {
 .bg-gradient-cta:hover { background: linear-gradient(to right, var(--color-primary-pink-hover), var(--color-brand-blue-hover)); }
 
 .btn-secondary {
-  background: linear-gradient(to right, var(--color-tertiary-purple), var(--color-primary-purple));
+  background: #334155;
   color: white;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: none;
+  border-radius: 0.75rem;
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.1);
+  border: 1px solid #334155;
   cursor: pointer;
 }
 
 .btn-secondary:hover {
-  background: linear-gradient(to right, var(--color-primary-purple), var(--color-tertiary-purple));
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  transform: scale(1.02);
+  background: #1e293b;
+  border-color: #1e293b;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.1);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-tertiary {
+  background: #ffffff;
+  color: #334155;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+}
+
+.btn-tertiary:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.btn-tertiary:active {
+  background: #f1f5f9;
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+}
+
+.btn-tertiary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 /* Background Gradient Styles */

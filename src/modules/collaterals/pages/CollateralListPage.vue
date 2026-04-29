@@ -147,7 +147,7 @@ onMounted(() => {
         <h2 class="text-xl font-bold text-slate-900">Collaterals</h2>
         <p class="text-sm text-slate-500">Upload, preview with signed links, and share product collaterals securely.</p>
       </div>
-      <button class="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" @click="showUploadModal = true">Upload Collateral</button>
+      <button class="btn-secondary rounded-lg px-4 py-2 text-sm font-semibold" @click="showUploadModal = true">Upload Collateral</button>
     </header>
 
     <CollateralFilters

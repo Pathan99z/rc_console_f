@@ -346,9 +346,25 @@ async function onEditPipelineChanged() {
         <p class="text-sm text-slate-500">Manage pipeline-based deals with list and kanban workflows.</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button class="rounded border px-3 py-1.5 text-sm" :class="viewMode === 'list' ? 'bg-slate-900 text-white' : ''" @click="viewMode = 'list'">List View</button>
-        <button class="rounded border px-3 py-1.5 text-sm" :class="viewMode === 'kanban' ? 'bg-slate-900 text-white' : ''" @click="viewMode = 'kanban'">Kanban View</button>
-        <button class="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" @click="showCreateDealModal = true">Create Deal</button>
+        <div class="inline-flex rounded-xl border border-slate-300 bg-white p-1">
+          <button
+            class="rounded-lg px-4 py-1.5 text-sm font-medium transition-colors"
+            :class="viewMode === 'list' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'"
+            :aria-pressed="viewMode === 'list'"
+            @click="viewMode = 'list'"
+          >
+            List View
+          </button>
+          <button
+            class="rounded-lg px-4 py-1.5 text-sm font-medium transition-colors"
+            :class="viewMode === 'kanban' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'"
+            :aria-pressed="viewMode === 'kanban'"
+            @click="viewMode = 'kanban'"
+          >
+            Kanban View
+          </button>
+        </div>
+        <button class="btn-secondary rounded-lg px-4 py-2 text-sm font-semibold" @click="showCreateDealModal = true">Create Deal</button>
         <button v-if="isPrivilegedUser" class="rounded border px-3 py-1.5 text-sm" @click="showPipelineModal = true">New Pipeline</button>
         <button v-if="isPrivilegedUser && selectedPipelineId" class="rounded border px-3 py-1.5 text-sm" @click="showStageModal = true">New Stage</button>
       </div>

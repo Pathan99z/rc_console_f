@@ -31,18 +31,12 @@
           >
             Log in
           </RouterLink>
-          <a
-            href="#contact"
-            @click.prevent="scrollTo('contact')"
-            class="btn-primary text-sm px-5 py-2 rounded-lg"
-          >
           <RouterLink
             to="/signup"
-      
+            class="btn-primary text-sm px-5 py-2 rounded-lg"
           >
             Sign up
           </RouterLink>
-          </a>
         </div>
 
         <!-- Mobile Menu Toggle -->
@@ -78,16 +72,11 @@
                 style="color: var(--color-primary-purple); border-color: var(--color-primary-purple)"
                 @click="mobileMenuOpen = false"
               >Log in</RouterLink>
-              <a
-                href="#contact"
-                @click.prevent="scrollTo('contact'); mobileMenuOpen = false"
-                class="btn-primary text-sm text-center rounded-lg"
-              >
               <RouterLink
                 to="/signup"
+                class="btn-primary text-sm text-center rounded-lg"
                 @click="mobileMenuOpen = false"
               >sign up</RouterLink>
-              </a>
             </div>
           </div>
         </div>

@@ -5,6 +5,10 @@ import { useAuth } from '@/modules/auth/composables/useAuth'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import logo from '@/assets/logo.png'
 
+const props = defineProps<{
+  collapsed?: boolean
+}>()
+
 const route = useRoute()
 const router = useRouter()
 const { isGlobalAdmin, isCompanyAdmin } = useAuth()
@@ -48,20 +52,20 @@ async function logout() {
 </script>
 
 <template>
-  <aside class="flex min-h-screen w-64 flex-col border-r border-[var(--rc-border-soft)] bg-white">
-    <div class="flex items-center gap-2 border-b border-[var(--rc-border-soft)] px-4 py-4">
-      <img :src="logo" alt="RC Console" class="h-8 w-8 object-contain" />
-      <p class="text-xl font-bold text-gradient">Console</p>
+  <aside class="sidebar" :class="{ 'sidebar-collapsed': props.collapsed }">
+    <div class="sidebar-logo">
+      <img :src="logo" alt="RC Console" class="logo-img" />
+      <p v-if="!props.collapsed" class="logo-text text-gradient">Console</p>
     </div>
-    <nav class="flex-1 space-y-1 p-3">
+    <nav class="sidebar-nav">
       <RouterLink
         v-for="item in menuItems"
         :key="item.to"
         :to="item.to"
-        class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-        :class="{ 'bg-indigo-50 text-indigo-700': route.path === item.to || route.path.startsWith(`${item.to}/`) }"
+        class="nav-item"
+        :class="{ active: route.path === item.to || route.path.startsWith(`${item.to}/`) }"
       >
-        <span class="h-4 w-4">
+        <span class="nav-icon">
           <svg v-if="item.icon === 'grid'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>
           <svg v-else-if="item.icon === 'users'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
           <svg v-else-if="item.icon === 'userCog'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a4 4 0 11-8 0 4 4 0 018 0zM3 21a6 6 0 1112 0M19.4 15a1 1 0 011.2 1.2l.8.3a1 1 0 010 1l-.8.3a1 1 0 01-1.2 1.2l-.3.8a1 1 0 01-1 0l-.3-.8a1 1 0 01-1.2-1.2l-.8-.3a1 1 0 010-1l.8-.3a1 1 0 011.2-1.2l.3-.8a1 1 0 011 0l.3.8z"/></svg>
@@ -73,20 +77,121 @@ async function logout() {
           <svg v-else-if="item.icon === 'receipt'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14h6M9 10h6M9 18h6M7 3h10a1 1 0 011 1v16l-2-1-2 1-2-1-2 1-2-1-2 1V4a1 1 0 011-1z"/></svg>
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m6 0h6M15 21h6m-6-2v2M3 12h18M3 19h12"/></svg>
         </span>
-        {{ item.label }}
+        <span v-if="!props.collapsed" class="nav-label">{{ item.label }}</span>
       </RouterLink>
     </nav>
-    <div class="border-t border-[var(--rc-border-soft)] p-3">
-      <div class="flex items-center gap-2 rounded-lg px-2 py-2">
-        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-white">
-          {{ userInitials }}
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-semibold text-slate-900">{{ authStore.user?.name || 'User' }}</p>
-          <p class="text-xs text-slate-500">{{ authStore.user?.role || 'member' }}</p>
-        </div>
-        <button class="rounded border px-2 py-1 text-xs hover:bg-red-50 hover:text-red-600" @click="logout">Logout</button>
+    <div class="sidebar-user">
+      <div class="user-avatar">{{ userInitials }}</div>
+      <div v-if="!props.collapsed" class="user-info">
+        <p class="user-name">{{ authStore.user?.name || 'User' }}</p>
+        <p class="user-role">{{ authStore.user?.role || 'member' }}</p>
       </div>
+
+      <button class="logout-btn" @click="logout" title="Sign out">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      </button>
     </div>
   </aside>
 </template>
+
+<style scoped>
+/* Sidebar UI (copied from Dashboard.vue) */
+.sidebar {
+  width: 248px;
+  min-height: 100vh;
+  background: #ffffff;
+  border-right: 1px solid #e7eaf0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width 0.25s ease;
+}
+
+.sidebar-collapsed { width: 74px; }
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.logo-img { width: 34px; height: 34px; object-fit: contain; flex-shrink: 0; }
+.logo-text { font-size: 1.15rem; font-weight: 700; white-space: nowrap; letter-spacing: -0.01em; }
+
+.sidebar-nav {
+  flex: 1;
+  padding: 0.85rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.62rem 0.8rem;
+  border-radius: 0.7rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--rc-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.18s ease;
+  text-align: left;
+  width: 100%;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.nav-item:hover { background: #f5f7fb; color: #334155; }
+.nav-item.active { background: #eef2ff; color: #4f46e5; font-weight: 600; }
+
+.nav-icon { flex-shrink: 0; display: flex; }
+.nav-icon svg { width: 20px; height: 20px; }
+.nav-label { flex: 1; }
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.95rem 1rem;
+  border-top: 1px solid #eef1f5;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #6366f1;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 0.8rem; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 0.7rem; color: #9ca3af; }
+
+.logout-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+}
+.logout-btn:hover { color: #ef4444; background: #fee2e2; }
+</style>

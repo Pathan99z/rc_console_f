@@ -90,7 +90,7 @@ onMounted(() => {
         <h2 class="text-xl font-bold text-slate-900">Products</h2>
         <p class="text-sm text-slate-500">Manage reusable products for quotes and future modules.</p>
       </div>
-      <button class="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" @click="$router.push('/app/products/create')">Create Product</button>
+      <button class="btn-secondary rounded-lg px-4 py-2 text-sm font-semibold" @click="$router.push('/app/products/create')">Create Product</button>
     </header>
 
     <ProductFilters

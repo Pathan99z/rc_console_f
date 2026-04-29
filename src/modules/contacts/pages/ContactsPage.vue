@@ -289,7 +289,7 @@ const hasContacts = computed(() => contactsStore.items.length > 0)
         <p class="text-sm text-slate-500">Core CRM contacts with lifecycle and activity support.</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button class="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" @click="openCreateModal">Create Contact</button>
+        <button class="btn-secondary rounded-lg px-4 py-2 text-sm font-semibold" @click="openCreateModal">Create Contact</button>
         <button class="rounded border px-3 py-1.5 text-sm" :disabled="importing" @click="showImportModal = true">
           {{ importing ? 'Importing...' : 'Import CSV' }}
         </button>

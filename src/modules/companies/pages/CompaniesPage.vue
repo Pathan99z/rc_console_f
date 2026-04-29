@@ -275,7 +275,7 @@ function downloadCompanySampleCsv() {
         <p class="text-sm text-slate-500">Maintain company records for CRM operations.</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button class="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" @click="openCreateModal">Create Company</button>
+        <button class="btn-secondary rounded-lg px-4 py-2 text-sm font-semibold" @click="openCreateModal">Create Company</button>
         <button class="rounded border px-3 py-1.5 text-sm" :disabled="importing" @click="showImportModal = true">{{ importing ? 'Importing...' : 'Import CSV' }}</button>
         <button class="rounded border px-3 py-1.5 text-sm" :disabled="exporting" @click="exportCsv">{{ exporting ? 'Exporting...' : 'Export CSV' }}</button>
       </div>

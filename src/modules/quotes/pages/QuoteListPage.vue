@@ -58,7 +58,7 @@ onMounted(() => {
         <h2 class="text-xl font-bold text-slate-900">Quotes</h2>
         <p class="text-sm text-slate-500">Manage customer quotes with status, totals, and lifecycle actions.</p>
       </div>
-      <button class="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" @click="$router.push('/app/quotes/create')">Create Quote</button>
+      <button class="btn-secondary rounded-lg px-4 py-2 text-sm font-semibold" @click="$router.push('/app/quotes/create')">Create Quote</button>
     </header>
 
     <QuoteFilters

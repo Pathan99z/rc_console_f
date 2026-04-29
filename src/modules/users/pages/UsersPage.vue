@@ -189,7 +189,7 @@ function userStatusClass(status: string) {
       <p v-if="usersStore.message" class="mt-2 text-sm text-slate-600">{{ usersStore.message }}</p>
       <p v-if="usersStore.errors.email?.[0]" class="mt-1 text-sm text-red-600">{{ usersStore.errors.email[0] }}</p>
       <button
-        class="btn-primary mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold"
+        class="btn-secondary mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold"
         :disabled="usersStore.loading || creatingUser"
         @click="submitCreateUser"
       >

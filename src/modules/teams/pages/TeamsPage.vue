@@ -109,7 +109,11 @@ async function removeTeam(id: number) {
       </div>
       <p v-if="teamsStore.errors.name?.[0]" class="mt-1 text-sm text-red-600">{{ teamsStore.errors.name[0] }}</p>
       <div class="mt-3 flex gap-2">
-        <button class="btn-primary inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold" :disabled="saving || creating" @click="submitForm">
+        <button
+          class="btn-secondary inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold"
+          :disabled="saving || creating"
+          @click="submitForm"
+        >
           <span v-if="saving || creating" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
           {{ editingTeamId ? 'Save Team' : 'Create Team' }}
         </button>
