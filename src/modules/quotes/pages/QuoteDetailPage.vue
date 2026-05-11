@@ -3,7 +3,6 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import QuoteStatusBadge from '@/modules/quotes/components/QuoteStatusBadge.vue'
 import QuoteAttachmentUpload from '@/modules/quotes/components/QuoteAttachmentUpload.vue'
-import QuoteSummary from '@/modules/quotes/components/QuoteSummary.vue'
 import { useQuotesStore } from '@/modules/quotes/store/quote.store'
 import { useToast } from '@/shared/utils/useToast'
 import type { QuoteProductRow } from '@/modules/quotes/components/QuoteProductTable.vue'
@@ -55,6 +54,7 @@ const selectedDealCurrency = computed(() => {
   return deal?.currency_code || ''
 })
 
+
 const summary = computed(() => {
   const subtotal = form.products.reduce((sum, row) => {
     const qty = toNumber(row.quantity)
@@ -86,6 +86,18 @@ function formatDisplayDate(value: string | null | undefined) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleDateString()
+}
+
+function paymentStatusLabel(status: string | null | undefined) {
+  const v = String(status || 'unpaid').toLowerCase()
+  return v === 'paid' ? 'Paid' : 'Unpaid'
+}
+
+function paymentStatusBadgeClass(status: string | null | undefined) {
+  const v = String(status || 'unpaid').toLowerCase()
+  return v === 'paid'
+    ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80'
+    : 'bg-amber-50 text-amber-900 ring-1 ring-amber-200/80'
 }
 
 function syncFormFromCurrent() {
@@ -305,21 +317,41 @@ onMounted(() => {
         </div>
 
         <div class="space-y-4">
-          <div class="rounded-xl border border-[var(--rc-border-soft)] bg-white p-4">
+          <div class="rounded-xl border border-[var(--rc-border-soft)] bg-gradient-to-b from-white to-slate-50/80 p-4 shadow-sm">
             <h4 class="mb-3 font-semibold text-slate-900">Quote Summary</h4>
             <div class="space-y-2 text-sm text-slate-700">
-              <p class="flex justify-between"><span>Quote Number</span><span>{{ quotesStore.current.quote_number }}</span></p>
-              <p class="flex justify-between"><span>Status</span><span class="capitalize">{{ quotesStore.current.status }}</span></p>
-              <p class="flex justify-between"><span>Currency</span><span>{{ quotesStore.current.currency_code || form.currency_code }}</span></p>
-              <p class="flex justify-between"><span>Subtotal</span><span>{{ formatMoney(quotesStore.current.subtotal) }}</span></p>
-              <p class="flex justify-between"><span>Tax Total</span><span>{{ formatMoney(quotesStore.current.tax_total) }}</span></p>
-              <p class="flex justify-between"><span>Discount</span><span>- {{ formatMoney(quotesStore.current.discount_total) }}</span></p>
-              <p class="flex justify-between border-t pt-2 font-semibold text-slate-900">
-                <span>Total Amount</span>
-                <span>{{ formatMoney(quotesStore.current.total) }}</span>
+              <p class="flex justify-between"><span class="text-slate-500">Quote number</span><span class="font-medium text-slate-900">{{ quotesStore.current.quote_number }}</span></p>
+              <p class="flex items-center justify-between gap-2">
+                <span class="text-slate-500">Quote status</span>
+                <span class="capitalize text-slate-900">{{ quotesStore.current.status }}</span>
               </p>
-              <p class="flex justify-between"><span>Created</span><span>{{ formatDisplayDate(quotesStore.current.created_at) }}</span></p>
-              <p class="flex justify-between"><span>Valid Until</span><span>{{ formatDisplayDate(quotesStore.current.valid_until) }}</span></p>
+              <p class="flex items-center justify-between gap-2">
+                <span class="text-slate-500">Payment</span>
+                <span
+                  class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize"
+                  :class="paymentStatusBadgeClass(quotesStore.current.payment_status)"
+                >
+                  {{ paymentStatusLabel(quotesStore.current.payment_status) }}
+                </span>
+              </p>
+              <p class="flex justify-between"><span class="text-slate-500">Currency</span><span>{{ quotesStore.current.currency_code || form.currency_code }}</span></p>
+              <p class="flex justify-between"><span class="text-slate-500">Subtotal</span><span>{{ formatMoney(quotesStore.current.subtotal) }}</span></p>
+              <p class="flex justify-between"><span class="text-slate-500">Tax total</span><span>{{ formatMoney(quotesStore.current.tax_total) }}</span></p>
+              <p class="flex justify-between"><span class="text-slate-500">Discount</span><span>- {{ formatMoney(quotesStore.current.discount_total) }}</span></p>
+              <p class="flex justify-between border-t border-slate-200/80 pt-2 font-semibold text-slate-900">
+                <span>Total</span>
+                <span class="text-base text-indigo-700">{{ formatMoney(quotesStore.current.total) }}</span>
+              </p>
+              <p class="flex justify-between text-xs text-slate-500"><span>Created</span><span>{{ formatDisplayDate(quotesStore.current.created_at) }}</span></p>
+              <p class="flex justify-between text-xs text-slate-500"><span>Valid until</span><span>{{ formatDisplayDate(quotesStore.current.valid_until) }}</span></p>
+            </div>
+
+            <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Payments</p>
+              <p class="mt-1 text-xs text-slate-600">Payment link creation and delivery is managed from the dedicated Payments page.</p>
+              <button class="mt-3 rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-white" @click="$router.push('/app/payments')">
+                Open Payments
+              </button>
             </div>
           </div>
 

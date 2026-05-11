@@ -23,10 +23,13 @@ const menuItems = computed(() => {
     { to: '/app/products', label: 'Products', icon: 'box' },
     { to: '/app/collaterals', label: 'Collaterals', icon: 'fileText' },
     { to: '/app/quotes', label: 'Quotes', icon: 'receipt' },
+    { to: '/app/payments', label: 'Payments', icon: 'creditCard' },
+    { to: '/app/invoices', label: 'Invoices', icon: 'fileInvoice' },
   ]
   const companyAdminExtras = [
     { to: '/app/users', label: 'Users', icon: 'userCog' },
     { to: '/app/teams', label: 'Teams', icon: 'team' },
+    { to: '/app/settings/payment', label: 'Payment Settings', icon: 'settings' },
   ]
   const globalAdminExtras = [{ to: '/app/tenants', label: 'Tenants', icon: 'globe' }]
 
@@ -75,6 +78,9 @@ async function logout() {
           <svg v-else-if="item.icon === 'box'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8 4-8-4m16 0l-8-4-8 4m16 0v10l-8 4m-8-14v10l8 4m0-10v10"/></svg>
           <svg v-else-if="item.icon === 'fileText'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 2v6h6"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 13H8M16 17H8M10 9H8"/></svg>
           <svg v-else-if="item.icon === 'receipt'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14h6M9 10h6M9 18h6M7 3h10a1 1 0 011 1v16l-2-1-2 1-2-1-2 1-2-1-2 1V4a1 1 0 011-1z"/></svg>
+          <svg v-else-if="item.icon === 'creditCard'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 10h20"/></svg>
+          <svg v-else-if="item.icon === 'fileInvoice'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8M8 11h8M8 15h5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 3h8l4 4v14a1 1 0 01-1 1H7a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+          <svg v-else-if="item.icon === 'settings'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317a1 1 0 011.35-.936l.862.345a1 1 0 00.927-.073l.79-.527a1 1 0 011.296.115l.707.707a1 1 0 01.115 1.296l-.527.79a1 1 0 00-.073.927l.345.862a1 1 0 01-.936 1.35h-1a1 1 0 00-.95.684l-.315.946a1 1 0 01-1.9 0l-.315-.946a1 1 0 00-.95-.684h-1a1 1 0 01-.936-1.35l.345-.862a1 1 0 00-.073-.927l-.527-.79a1 1 0 01.115-1.296l.707-.707a1 1 0 011.296-.115l.79.527a1 1 0 00.927.073l.862-.345z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m6 0h6M15 21h6m-6-2v2M3 12h18M3 19h12"/></svg>
         </span>
         <span v-if="!props.collapsed" class="nav-label">{{ item.label }}</span>
@@ -180,13 +186,13 @@ async function logout() {
 
 .user-info { flex: 1; min-width: 0; }
 .user-name { font-size: 0.8rem; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.user-role { font-size: 0.7rem; color: #9ca3af; }
+.user-role { font-size: 0.7rem; color: #6b7280; }
 
 .logout-btn {
   background: none;
   border: none;
   cursor: pointer;
-  color: #9ca3af;
+  color: #6b7280;
   padding: 4px;
   border-radius: 6px;
   transition: color 0.2s, background 0.2s;

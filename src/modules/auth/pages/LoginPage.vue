@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { computed, reactive, ref } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import logo from '@/assets/logo.png'
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const unverifiedState = ref(false)
 const showPassword = ref(false)
 const form = reactive({
@@ -13,6 +14,23 @@ const form = reactive({
   password: '',
   device_name: 'web',
   remember: false,
+})
+
+const paymentNotice = computed(() => {
+  const payment = String(route.query.payment || '').toLowerCase()
+  if (payment === 'success') {
+    return {
+      type: 'success' as const,
+      message: 'Payment was completed successfully. You can sign in to continue.',
+    }
+  }
+  if (payment === 'cancelled') {
+    return {
+      type: 'info' as const,
+      message: 'Payment was cancelled. You can sign in and retry from your quote.',
+    }
+  }
+  return null
 })
 
 async function onSubmit() {
@@ -57,6 +75,34 @@ async function resendVerification() {
           <h1 class="text-2xl font-semibold text-gray-900">Sign in</h1>
         </div>
 
+        <Transition name="fade">
+          <div
+            v-if="paymentNotice"
+            class="mb-4 flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm"
+            :class="paymentNotice.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-indigo-200 bg-indigo-50 text-indigo-700'"
+          >
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                v-if="paymentNotice.type === 'success'"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+              <path
+                v-else
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            {{ paymentNotice.message }}
+          </div>
+        </Transition>
+
         <!-- Error banner -->
         <Transition name="fade">
           <div v-if="auth.apiMessage" class="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
@@ -71,7 +117,7 @@ async function resendVerification() {
         <form @submit.prevent="onSubmit" class="space-y-4" novalidate>
           <!-- Email -->
           <div class="space-y-1.5">
-            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
             <div class="relative">
               <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,6 +125,8 @@ async function resendVerification() {
                 </svg>
               </span>
               <input
+                id="login-email"
+                name="email"
                 v-model="form.email"
                 type="email"
                 placeholder="Enter your email"
@@ -92,7 +140,7 @@ async function resendVerification() {
 
           <!-- Password -->
           <div class="space-y-1.5">
-            <label class="block text-sm font-medium text-gray-700">Password</label>
+            <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
             <div class="relative">
               <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,10 +148,12 @@ async function resendVerification() {
                 </svg>
               </span>
               <input
+                id="login-password"
+                name="password"
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Enter your password"
-                autocomplete="current-password"
+                :autocomplete="showPassword ? 'off' : 'current-password'"
                 class="auth-input auth-input-password"
                 :class="{ 'border-red-400': auth.errors.password?.[0] }"
               />
@@ -127,12 +177,12 @@ async function resendVerification() {
 
           <!-- Remember me + Forgot password -->
           <div class="flex items-center justify-between pt-0.5">
-            <label class="flex items-center gap-2.5 cursor-pointer group">
+            <label for="remember-me" class="flex items-center gap-2.5 cursor-pointer group">
+              <input id="remember-me" v-model="form.remember" type="checkbox" class="sr-only" autocomplete="off" />
               <div
                 class="w-4 h-4 rounded border-2 flex items-center justify-center transition-all flex-shrink-0"
                 :class="form.remember ? 'border-transparent' : 'border-gray-300 group-hover:border-purple-400'"
                 :style="form.remember ? 'background: var(--rc-accent)' : ''"
-                @click="form.remember = !form.remember"
               >
                 <svg v-if="form.remember" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />

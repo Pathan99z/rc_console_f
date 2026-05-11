@@ -24,6 +24,10 @@ import QuoteCreatePage from '../modules/quotes/pages/QuoteCreatePage.vue'
 import QuoteDetailPage from '../modules/quotes/pages/QuoteDetailPage.vue'
 import QuoteEditPage from '../modules/quotes/pages/QuoteEditPage.vue'
 import PublicQuotePage from '../modules/quotes/pages/PublicQuotePage.vue'
+import PaymentSettingsPage from '../modules/payments/pages/PaymentSettingsPage.vue'
+import PaymentLinksPage from '../modules/payments/pages/PaymentLinksPage.vue'
+import InvoiceListPage from '../modules/invoices/pages/InvoiceListPage.vue'
+import InvoiceDetailPage from '../modules/invoices/pages/InvoiceDetailPage.vue'
 import ProtectedLayout from '@/shared/components/ProtectedLayout.vue'
 import { authAndRoleGuard } from '@/router/guards/accessGuards'
 
@@ -57,6 +61,10 @@ const routes = [
       { path: 'quotes/create', component: QuoteCreatePage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
       { path: 'quotes/:id/edit', component: QuoteEditPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
       { path: 'quotes/:id', component: QuoteDetailPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
+      { path: 'payments', component: PaymentLinksPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
+      { path: 'invoices', component: InvoiceListPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
+      { path: 'invoices/:id', component: InvoiceDetailPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
+      { path: 'settings/payment', component: PaymentSettingsPage, meta: { roles: ['global_admin', 'company_admin'] } },
     ],
   },
   { path: '/quote/public/:token', component: PublicQuotePage },
@@ -70,6 +78,8 @@ const routes = [
   { path: '/products', redirect: '/app/products' },
   { path: '/collaterals', redirect: '/app/collaterals' },
   { path: '/quotes', redirect: '/app/quotes' },
+  { path: '/payments', redirect: '/app/payments' },
+  { path: '/invoices', redirect: '/app/invoices' },
   // catch-all → landing
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]

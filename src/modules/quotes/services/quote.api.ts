@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/http/apiClient'
+import type { QuotePaymentLinkResponse } from '@/modules/payments/types/payment.types'
 import type {
   QuoteLayoutsResponse,
   QuoteListQuery,
@@ -55,6 +56,15 @@ export const quotesApi = {
   },
   send(quoteId: number, payload: QuoteSendPayload = {}) {
     return apiClient.post<QuoteResponse>(`/quotes/${quoteId}/send`, payload)
+  },
+  sendPaymentLink(quoteId: number, payload: { email?: string; message?: string } = {}) {
+    return apiClient.post<QuoteResponse>(`/quotes/${quoteId}/send-payment-link`, payload)
+  },
+  createPaymentLink(quoteId: number) {
+    return apiClient.post<QuotePaymentLinkResponse>(`/quotes/${quoteId}/payment-link`, {})
+  },
+  publicPaymentLink(token: string) {
+    return apiClient.post<QuotePaymentLinkResponse>(`/quotes/public/${token}/payment-link`, {})
   },
   uploadAttachment(quoteId: number, payload: { name: string; file: File }) {
     const form = new FormData()

@@ -37,11 +37,14 @@ export type QuoteAttachment = {
   signed_url?: string
 }
 
+export type QuotePaymentStatus = 'unpaid' | 'paid' | string
+
 export type QuoteModel = {
   id: number
   quote_number: string
   public_uuid?: string | null
   status: QuoteStatus
+  payment_status?: QuotePaymentStatus | null
   quote_type?: QuoteTypeCode
   notes?: string | null
   valid_until?: string | null

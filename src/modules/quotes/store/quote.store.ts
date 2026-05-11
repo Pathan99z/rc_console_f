@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { toApiError } from '@/core/http/apiClient'
+import type { PayFastPaymentSession } from '@/modules/payments/types/payment.types'
 import { quotesApi } from '@/modules/quotes/services/quote.api'
+import { submitPayfastForm } from '@/shared/utils/payfastFormSubmit'
+import { withRetry } from '@/shared/utils/withRetry'
 import type {
   QuoteLayoutItem,
   QuoteModel,
@@ -35,7 +38,9 @@ export const useQuotesStore = defineStore('quotes', () => {
   const deletingId = ref<number | null>(null)
   const statusUpdating = ref(false)
   const sending = ref(false)
+  const sendingPaymentLink = ref(false)
   const previewing = ref(false)
+  const paymentLinkSubmitting = ref(false)
   const uploadingAttachment = ref(false)
   const preview = ref<QuotePreviewData | null>(null)
   const message = ref('')
@@ -181,6 +186,26 @@ export const useQuotesStore = defineStore('quotes', () => {
     }
   }
 
+  async function sendQuotePaymentLink(quoteId: number, payload: { email?: string; message?: string } = {}) {
+    sendingPaymentLink.value = true
+    errors.value = {}
+    try {
+      const { data } = await withRetry(() => quotesApi.sendPaymentLink(quoteId, payload))
+      message.value = data.message
+      current.value = data.data.quote
+      const index = items.value.findIndex((item) => item.id === quoteId)
+      if (index >= 0) items.value[index] = data.data.quote
+      return data.data.quote
+    } catch (error) {
+      const normalized = toApiError(error)
+      message.value = normalized.message
+      errors.value = normalized.fieldErrors
+      throw normalized
+    } finally {
+      sendingPaymentLink.value = false
+    }
+  }
+
   async function uploadAttachment(quoteId: number, payload: { name: string; file: File }) {
     uploadingAttachment.value = true
     errors.value = {}
@@ -265,6 +290,42 @@ export const useQuotesStore = defineStore('quotes', () => {
     }
   }
 
+  async function createQuotePaymentLink(quoteId: number): Promise<PayFastPaymentSession | null> {
+    paymentLinkSubmitting.value = true
+    errors.value = {}
+    try {
+      const { data } = await withRetry(() => quotesApi.createPaymentLink(quoteId))
+      message.value = data.message
+      submitPayfastForm(data.data.action_url, data.data.method, data.data.fields, '_blank')
+      return data.data
+    } catch (error) {
+      const normalized = toApiError(error)
+      message.value = normalized.message
+      errors.value = normalized.fieldErrors
+      throw normalized
+    } finally {
+      paymentLinkSubmitting.value = false
+    }
+  }
+
+  async function createPublicQuotePaymentLink(token: string): Promise<PayFastPaymentSession | null> {
+    paymentLinkSubmitting.value = true
+    errors.value = {}
+    try {
+      const { data } = await withRetry(() => quotesApi.publicPaymentLink(token))
+      message.value = data.message
+      submitPayfastForm(data.data.action_url, data.data.method, data.data.fields, '_self')
+      return data.data
+    } catch (error) {
+      const normalized = toApiError(error)
+      message.value = normalized.message
+      errors.value = normalized.fieldErrors
+      throw normalized
+    } finally {
+      paymentLinkSubmitting.value = false
+    }
+  }
+
   async function fetchContactOptions() {
     const { data } = await contactsApi.list({ page: 1, per_page: 100 })
     contacts.value = data.data.items
@@ -330,6 +391,7 @@ export const useQuotesStore = defineStore('quotes', () => {
     deletingId,
     statusUpdating,
     sending,
+    sendingPaymentLink,
     previewing,
     uploadingAttachment,
     message,
@@ -343,12 +405,15 @@ export const useQuotesStore = defineStore('quotes', () => {
     deleteQuote,
     updateStatus,
     sendQuote,
+    sendQuotePaymentLink,
     previewQuotePrices,
     clearPreview,
     uploadAttachment,
     fetchPublicQuote,
     acceptQuote,
     rejectQuote,
+    createQuotePaymentLink,
+    createPublicQuotePaymentLink,
     fetchContactOptions,
     fetchQuoteLayouts,
     fetchDealOptions,
