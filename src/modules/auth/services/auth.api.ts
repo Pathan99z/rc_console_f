@@ -3,6 +3,7 @@ import type {
   ApiEnvelope,
   ForgotPasswordPayload,
   LoginPayload,
+  NavigationState,
   RegisterPayload,
   ResetPasswordPayload,
   User,
@@ -12,6 +13,7 @@ type RegisterResponse = ApiEnvelope<{ user: User }>
 type LoginResponse = ApiEnvelope<{ token: string; user: User }>
 type BasicResponse = ApiEnvelope<Record<string, never>>
 type UserResponse = ApiEnvelope<{ user: User }>
+type NavigationResponse = ApiEnvelope<NavigationState>
 
 export const authApi = {
   register(payload: RegisterPayload) {
@@ -34,6 +36,9 @@ export const authApi = {
   },
   me() {
     return apiClient.get<UserResponse>('/user')
+  },
+  navigation() {
+    return apiClient.get<NavigationResponse>('/navigation')
   },
   logout() {
     return apiClient.post<BasicResponse>('/logout')

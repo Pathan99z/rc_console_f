@@ -3,13 +3,65 @@ export interface User {
   tenant_id: number
   team_id?: number | null
   data_scope?: 'self' | 'team'
-  role: 'global_admin' | 'company_admin' | 'user'
+  role:
+    | 'global_admin'
+    | 'company_admin'
+    | 'user'
+    | 'partner_admin'
+    | 'partner_sales_manager'
+    | 'partner_sales_consultant'
+    | 'reseller_admin'
+    | 'reseller_sales_consultant'
+  organization_id?: number | null
   /** Backend maps DB ints to these strings */
   status?: 'active' | 'inactive' | 'suspended'
   name: string
   email: string
   email_verified_at: string | null
   created_at: string
+  roles?: string[]
+  permissions?: string[]
+  organization?: {
+    id: number
+    type: string
+    parent_id?: number | null
+  } | null
+  organization_role?: string | null
+  navigation_profile?: string | null
+  feature_flags?: Record<string, boolean>
+}
+
+export interface CapabilityProfile {
+  role: string
+  roles: string[]
+  permissions: string[]
+  navigation_profile: string | null
+  feature_flags: Record<string, boolean>
+}
+
+export interface NavigationMenuItem {
+  key?: string
+  label: string
+  route: string
+  icon?: string
+  permission?: string
+  feature_flag?: string
+  children?: NavigationMenuItem[]
+}
+
+export interface NavigationState {
+  menus: {
+    crm: NavigationMenuItem[]
+    prm: NavigationMenuItem[]
+  }
+  feature_flags: Record<string, boolean>
+  navigation_profile: string | null
+}
+
+export interface SessionContext {
+  user: User | null
+  capabilityProfile: CapabilityProfile
+  navigation: NavigationState | null
 }
 
 export interface ApiEnvelope<T> {

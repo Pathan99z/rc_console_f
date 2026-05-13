@@ -6,14 +6,27 @@ import { useUsersStore } from '@/modules/users/store/users.store'
 import { useAuth } from '@/modules/auth/composables/useAuth'
 import { useToast } from '@/shared/utils/useToast'
 import { useTeamsStore } from '@/modules/teams/store/teams.store'
+import { organizationsApi } from '@/modules/organizations/services/organization.api'
+import type { OrganizationItem } from '@/modules/organizations/types/organization.types'
 
 const usersStore = useUsersStore()
 const teamsStore = useTeamsStore()
 const { isGlobalAdmin, isCompanyAdmin } = useAuth()
 const toast = useToast()
 const askConfirm = ref<{ id: number; nextStatus: 'active' | 'inactive' } | null>(null)
-const pendingRoles = ref<Record<number, 'user' | 'company_admin'>>({})
+type UserRole =
+  | 'global_admin'
+  | 'company_admin'
+  | 'user'
+  | 'partner_admin'
+  | 'partner_sales_manager'
+  | 'partner_sales_consultant'
+  | 'reseller_admin'
+  | 'reseller_sales_consultant'
+
+const pendingRoles = ref<Record<number, UserRole>>({})
 const creatingUser = ref(false)
+const organizationOptions = ref<OrganizationItem[]>([])
 
 const form = reactive({
   name: '',
@@ -22,7 +35,8 @@ const form = reactive({
   tenant_id: '',
   team_id: '',
   data_scope: 'self' as 'self' | 'team',
-  role: 'user' as 'user' | 'company_admin',
+  role: 'user' as UserRole,
+  organization_id: '',
   status: 'active' as 'active' | 'inactive',
 })
 
@@ -38,8 +52,24 @@ onMounted(async () => {
   await usersStore.fetchUsers()
   if (isGlobalAdmin.value || isCompanyAdmin.value) {
     await teamsStore.fetchTeams(1, 100)
+    await loadOrganizationOptions()
   }
 })
+
+async function loadOrganizationOptions() {
+  try {
+    const { data } = await organizationsApi.list({ page: 1, per_page: 100 })
+    organizationOptions.value = data.data.items
+  } catch {
+    organizationOptions.value = []
+  }
+}
+
+function expectedOrganizationTypeForRole(role: UserRole): 'partner' | 'reseller' | null {
+  if (role.startsWith('partner_')) return 'partner'
+  if (role.startsWith('reseller_')) return 'reseller'
+  return null
+}
 
 async function submitCreateUser() {
   if (creatingUser.value) return
@@ -54,15 +84,23 @@ async function submitCreateUser() {
 
   try {
     creatingUser.value = true
+    const requiredType = expectedOrganizationTypeForRole(form.role)
+    const selectedOrganization = organizationOptions.value.find((item) => item.id === Number(form.organization_id))
+    if (requiredType && selectedOrganization && selectedOrganization.type !== requiredType) {
+      toast.error(`${form.role} must be mapped to a ${requiredType} record (partner or reseller directory).`)
+      return
+    }
+
     const payload: {
       name: string
       email: string
       password: string
       status: 'active' | 'inactive'
       tenant_id?: number
-      role?: 'user' | 'company_admin'
+      role?: UserRole
       team_id?: number | null
       data_scope?: 'self' | 'team'
+      organization_id?: number
     } = {
       name: form.name,
       email: form.email,
@@ -76,6 +114,9 @@ async function submitCreateUser() {
       payload.tenant_id = Number(form.tenant_id)
       payload.role = form.role
     }
+    if (form.organization_id) {
+      payload.organization_id = Number(form.organization_id)
+    }
 
     await usersStore.createUser(payload)
     toast.success('User created successfully.')
@@ -86,6 +127,7 @@ async function submitCreateUser() {
     form.team_id = ''
     form.data_scope = 'self'
     form.role = 'user'
+    form.organization_id = ''
     form.status = 'active'
   } catch {
     toast.error(usersStore.message || 'Failed to create user.')
@@ -108,20 +150,20 @@ async function confirmStatusChange() {
   }
 }
 
-function currentEditableRole(role: 'global_admin' | 'user' | 'company_admin') {
+function currentEditableRole(role: UserRole) {
   return role
 }
 
-function onRoleSelected(id: number, role: 'user' | 'company_admin') {
+function onRoleSelected(id: number, role: UserRole) {
   pendingRoles.value[id] = role
 }
 
-function hasPendingRoleChange(id: number, currentRole: 'global_admin' | 'user' | 'company_admin') {
+function hasPendingRoleChange(id: number, currentRole: UserRole) {
   if (currentRole === 'global_admin') return false
   return pendingRoles.value[id] !== undefined && pendingRoles.value[id] !== currentRole
 }
 
-async function saveRole(id: number, currentRole: 'global_admin' | 'user' | 'company_admin') {
+async function saveRole(id: number, currentRole: UserRole) {
   const nextRole = pendingRoles.value[id]
   if (!nextRole || currentRole === 'global_admin' || nextRole === currentRole) return
   try {
@@ -162,8 +204,22 @@ function userStatusClass(status: string) {
           <select v-model="form.role" class="rc-input">
             <option value="user">user</option>
             <option value="company_admin">company_admin</option>
+            <option value="partner_admin">partner_admin</option>
+            <option value="partner_sales_manager">partner_sales_manager</option>
+            <option value="partner_sales_consultant">partner_sales_consultant</option>
+            <option value="reseller_admin">reseller_admin</option>
+            <option value="reseller_sales_consultant">reseller_sales_consultant</option>
           </select>
         </template>
+        <div class="md:col-span-2">
+          <label for="user-form-org" class="mb-1 block text-xs font-semibold text-slate-600">Partner / reseller record</label>
+          <select id="user-form-org" v-model="form.organization_id" class="rc-input w-full">
+            <option value="">None (optional)</option>
+            <option v-for="org in organizationOptions" :key="org.id" :value="String(org.id)">
+              {{ org.display_name }} ({{ org.type }})
+            </option>
+          </select>
+        </div>
         <template v-if="teamsStore.items.length">
           <select v-model="form.team_id" class="rc-input">
             <option value="">No team assigned</option>
@@ -210,10 +266,15 @@ function userStatusClass(status: string) {
                   :value="pendingRoles[user.id] ?? currentEditableRole(user.role)"
                   class="rounded border px-2 py-1 text-xs"
                   :disabled="user.role === 'global_admin'"
-                  @change="onRoleSelected(user.id, ($event.target as HTMLSelectElement).value as 'user' | 'company_admin')"
+                  @change="onRoleSelected(user.id, ($event.target as HTMLSelectElement).value as UserRole)"
                 >
                   <option value="user">user</option>
                   <option value="company_admin">company_admin</option>
+                  <option value="partner_admin">partner_admin</option>
+                  <option value="partner_sales_manager">partner_sales_manager</option>
+                  <option value="partner_sales_consultant">partner_sales_consultant</option>
+                  <option value="reseller_admin">reseller_admin</option>
+                  <option value="reseller_sales_consultant">reseller_sales_consultant</option>
                   <option v-if="user.role === 'global_admin'" value="global_admin">global_admin</option>
                 </select>
                 <button

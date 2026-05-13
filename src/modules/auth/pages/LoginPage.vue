@@ -38,7 +38,7 @@ async function onSubmit() {
   unverifiedState.value = false
   try {
     await auth.login({ ...form })
-    router.push('/app/dashboard')
+    router.push(auth.getDefaultRoute())
   } catch {
     const emailErrors = auth.errors.email || []
     unverifiedState.value = emailErrors.some((message) => message.toLowerCase().includes('verify your email'))

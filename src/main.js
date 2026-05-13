@@ -9,11 +9,9 @@ const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
-app.use(router)
-
 const authStore = useAuthStore()
-if (authStore.token) {
-  authStore.fetchUser()
-}
+await authStore.hydrateSession()
 
+app.use(router)
+await router.isReady()
 app.mount('#app')

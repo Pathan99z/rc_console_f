@@ -21,11 +21,13 @@ export const useUsersStore = defineStore('users', () => {
       message.value = data.message
     } catch (error) {
       const normalized = toApiError(error)
-      message.value = normalized.isTooManyRequests
-        ? 'Too many attempts. Please try again later.'
-        : normalized.isForbidden
-          ? normalized.message || 'You do not have access to this resource.'
-          : normalized.message
+      if (normalized.isTooManyRequests) {
+        message.value = 'Too many attempts. Please try again later.'
+      } else if (normalized.isForbidden) {
+        message.value = normalized.message || 'You do not have access to this resource.'
+      } else {
+        message.value = normalized.message
+      }
       errors.value = normalized.fieldErrors
       throw normalized
     } finally {
@@ -62,7 +64,7 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  async function updateRole(userId: number, role: 'user' | 'company_admin') {
+  async function updateRole(userId: number, role: UserItem['role']) {
     loading.value = true
     try {
       const { data } = await usersApi.updateRole(userId, role)

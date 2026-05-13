@@ -5,7 +5,16 @@ export type UserItem = {
   tenant_id: number
   team_id?: number | null
   data_scope?: 'self' | 'team'
-  role: 'global_admin' | 'company_admin' | 'user'
+  role:
+    | 'global_admin'
+    | 'company_admin'
+    | 'user'
+    | 'partner_admin'
+    | 'partner_sales_manager'
+    | 'partner_sales_consultant'
+    | 'reseller_admin'
+    | 'reseller_sales_consultant'
+  organization_id?: number | null
   status: 'active' | 'inactive' | 'suspended'
   name: string
   email: string
@@ -39,6 +48,7 @@ export const usersApi = {
     status?: string
     tenant_id?: number
     role?: string
+    organization_id?: number
     team_id?: number | null
     data_scope?: 'self' | 'team'
   }) {
@@ -47,7 +57,7 @@ export const usersApi = {
   updateStatus(userId: number, status: 'active' | 'inactive') {
     return apiClient.patch<UserResponse>(`/users/${userId}/status`, { status })
   },
-  updateRole(userId: number, role: 'user' | 'company_admin') {
+  updateRole(userId: number, role: UserItem['role']) {
     return apiClient.patch<UserResponse>(`/users/${userId}/role`, { role })
   },
 }

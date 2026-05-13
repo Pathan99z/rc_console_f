@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/modules/auth/composables/useAuth'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { useNavigationStore } from '@/modules/auth/store/navigation.store'
+import { hasAnyRole } from '@/modules/auth/composables/useCapabilities'
 import logo from '@/assets/logo.png'
 
 const props = defineProps<{
@@ -13,29 +15,113 @@ const route = useRoute()
 const router = useRouter()
 const { isGlobalAdmin, isCompanyAdmin } = useAuth()
 const authStore = useAuthStore()
+const navigationStore = useNavigationStore()
+
+type NavItem = { to: string; label: string; icon: string }
+type NavAudience = 'tenant' | 'partner' | 'all'
+type PrmFeatureChannel = 'tenant' | 'partner' | 'either'
+
+const common: NavItem[] = [
+  { to: '/app/dashboard', label: 'Dashboard', icon: 'grid' },
+  { to: '/app/contacts', label: 'Contacts', icon: 'users' },
+  { to: '/app/companies', label: 'Companies', icon: 'building' },
+  { to: '/app/deals', label: 'Deals', icon: 'briefcase' },
+  { to: '/app/products', label: 'Products', icon: 'box' },
+  { to: '/app/collaterals', label: 'Collaterals', icon: 'fileText' },
+  { to: '/app/quotes', label: 'Quotes', icon: 'receipt' },
+  { to: '/app/payments', label: 'Payments', icon: 'creditCard' },
+  { to: '/app/invoices', label: 'Invoices', icon: 'fileInvoice' },
+  { to: '/app/organizations', label: 'Partners & resellers', icon: 'network' },
+]
+
+const companyAdminExtras: NavItem[] = [
+  { to: '/app/users', label: 'Users', icon: 'userCog' },
+  { to: '/app/teams', label: 'Teams', icon: 'team' },
+  { to: '/app/settings/payment', label: 'Payment Settings', icon: 'settings' },
+]
+
+const globalAdminExtras: NavItem[] = [{ to: '/app/tenants', label: 'Tenants', icon: 'globe' }]
+
+/** PRM-only routes appended after base CRM nav (additive). */
+const prmAddonCandidates: Array<
+  NavItem & {
+    featureFlag?: string
+    audience: NavAudience
+  }
+> = [
+  { to: '/app/prm/programs', label: 'PRM Programs', icon: 'briefcase', featureFlag: 'prm_enabled', audience: 'tenant' },
+  { to: '/app/prm/program-enrollments', label: 'PRM Enrollments', icon: 'box', featureFlag: 'prm_enabled', audience: 'tenant' },
+  { to: '/app/prm/my-program', label: 'My Program', icon: 'briefcase', featureFlag: 'prm_enabled', audience: 'partner' },
+  { to: '/app/prm/commissions', label: 'PRM Commissions', icon: 'receipt', featureFlag: 'prm_enabled', audience: 'all' },
+  { to: '/app/prm/licenses', label: 'PRM Licenses', icon: 'fileText', featureFlag: 'prm_enabled', audience: 'all' },
+  { to: '/app/prm/resources', label: 'Resource Center', icon: 'fileText', featureFlag: 'prm_enabled', audience: 'all' },
+]
+
+function audienceOk(audience: NavAudience): boolean {
+  if (audience === 'all') return isTenantAdminUser() || isPartnerChannelUser()
+  if (audience === 'tenant') return isTenantAdminUser()
+  return isPartnerChannelUser()
+}
+
+function isPartnerChannelUser(): boolean {
+  const u = authStore.user
+  if (!u) return false
+  const profile = (u.navigation_profile || '').toLowerCase()
+  if (profile.includes('partner') || profile.includes('reseller')) return true
+  const r = u.role || ''
+  return r.startsWith('partner_') || r.startsWith('reseller_')
+}
+
+function isTenantAdminUser(): boolean {
+  return hasAnyRole(authStore.user, ['global_admin', 'company_admin'])
+}
+
+function mergedFlags(): Record<string, boolean> {
+  return navigationStore.mergedFeatureFlags
+}
+
+/** Explicit false hides; true shows; unset preserves legacy visibility for that audience. */
+function allowsPrmFeature(key: string | undefined, channel: PrmFeatureChannel): boolean {
+  const flags = mergedFlags()
+  if (key && flags[key] === false) return false
+  if (key && flags[key] === true) return true
+  if (channel === 'either') return isTenantAdminUser() || isPartnerChannelUser()
+  return channel === 'tenant' ? isTenantAdminUser() : isPartnerChannelUser()
+}
+
+function prmFeatureChannel(audience: NavAudience): PrmFeatureChannel {
+  if (audience === 'tenant') return 'tenant'
+  if (audience === 'partner') return 'partner'
+  return 'either'
+}
+
+function visiblePrmAddons(): NavItem[] {
+  const u = authStore.user
+  if (!u) return []
+  const out: NavItem[] = []
+  const seenTo = new Set<string>()
+
+  for (const item of prmAddonCandidates) {
+    if (!audienceOk(item.audience)) continue
+    const channel = prmFeatureChannel(item.audience)
+    if (!allowsPrmFeature(item.featureFlag, channel)) continue
+    if (seenTo.has(item.to)) continue
+    seenTo.add(item.to)
+    out.push({ to: item.to, label: item.label, icon: item.icon })
+  }
+  return out
+}
 
 const menuItems = computed(() => {
-  const common = [
-    { to: '/app/dashboard', label: 'Dashboard', icon: 'grid' },
-    { to: '/app/contacts', label: 'Contacts', icon: 'users' },
-    { to: '/app/companies', label: 'Companies', icon: 'building' },
-    { to: '/app/deals', label: 'Deals', icon: 'briefcase' },
-    { to: '/app/products', label: 'Products', icon: 'box' },
-    { to: '/app/collaterals', label: 'Collaterals', icon: 'fileText' },
-    { to: '/app/quotes', label: 'Quotes', icon: 'receipt' },
-    { to: '/app/payments', label: 'Payments', icon: 'creditCard' },
-    { to: '/app/invoices', label: 'Invoices', icon: 'fileInvoice' },
-  ]
-  const companyAdminExtras = [
-    { to: '/app/users', label: 'Users', icon: 'userCog' },
-    { to: '/app/teams', label: 'Teams', icon: 'team' },
-    { to: '/app/settings/payment', label: 'Payment Settings', icon: 'settings' },
-  ]
-  const globalAdminExtras = [{ to: '/app/tenants', label: 'Tenants', icon: 'globe' }]
+  let base: NavItem[] = []
+  if (isGlobalAdmin.value) base = [...common, ...companyAdminExtras, ...globalAdminExtras]
+  else if (isCompanyAdmin.value) base = [...common, ...companyAdminExtras]
+  else if (isPartnerChannelUser()) base = [...common]
+  else base = [...common]
 
-  if (isGlobalAdmin.value) return [...common, ...companyAdminExtras, ...globalAdminExtras]
-  if (isCompanyAdmin.value) return [...common, ...companyAdminExtras]
-  return common
+  const baseTos = new Set(base.map((i) => i.to))
+  const addons = visiblePrmAddons().filter((i) => !baseTos.has(i.to))
+  return [...base, ...addons]
 })
 
 const userInitials = computed(() => {
@@ -63,7 +149,7 @@ async function logout() {
     <nav class="sidebar-nav">
       <RouterLink
         v-for="item in menuItems"
-        :key="item.to"
+        :key="item.to + item.label"
         :to="item.to"
         class="nav-item"
         :class="{ active: route.path === item.to || route.path.startsWith(`${item.to}/`) }"
@@ -80,7 +166,9 @@ async function logout() {
           <svg v-else-if="item.icon === 'receipt'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14h6M9 10h6M9 18h6M7 3h10a1 1 0 011 1v16l-2-1-2 1-2-1-2 1-2-1-2 1V4a1 1 0 011-1z"/></svg>
           <svg v-else-if="item.icon === 'creditCard'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 10h20"/></svg>
           <svg v-else-if="item.icon === 'fileInvoice'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8M8 11h8M8 15h5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 3h8l4 4v14a1 1 0 01-1 1H7a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+          <svg v-else-if="item.icon === 'network'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="5" r="2" stroke-width="2"/><circle cx="5" cy="19" r="2" stroke-width="2"/><circle cx="19" cy="19" r="2" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5M12 12l-7 5M12 12l7 5"/></svg>
           <svg v-else-if="item.icon === 'settings'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317a1 1 0 011.35-.936l.862.345a1 1 0 00.927-.073l.79-.527a1 1 0 011.296.115l.707.707a1 1 0 01.115 1.296l-.527.79a1 1 0 00-.073.927l.345.862a1 1 0 01-.936 1.35h-1a1 1 0 00-.95.684l-.315.946a1 1 0 01-1.9 0l-.315-.946a1 1 0 00-.95-.684h-1a1 1 0 01-.936-1.35l.345-.862a1 1 0 00-.073-.927l-.527-.79a1 1 0 01.115-1.296l.707-.707a1 1 0 011.296-.115l.79.527a1 1 0 00.927.073l.862-.345z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+          <svg v-else-if="item.icon === 'globe'" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3a9 9 0 100 18 9 9 0 000-18"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h18"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3a15 15 0 010 18"/></svg>
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m6 0h6M15 21h6m-6-2v2M3 12h18M3 19h12"/></svg>
         </span>
         <span v-if="!props.collapsed" class="nav-label">{{ item.label }}</span>
@@ -175,7 +263,7 @@ async function logout() {
   height: 34px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: #6366f1;
+  background: #4338ca;
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 700;
@@ -186,18 +274,18 @@ async function logout() {
 
 .user-info { flex: 1; min-width: 0; }
 .user-name { font-size: 0.8rem; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.user-role { font-size: 0.7rem; color: #6b7280; }
+.user-role { font-size: 0.7rem; color: #4b5563; }
 
 .logout-btn {
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: #4b5563;
   padding: 4px;
   border-radius: 6px;
   transition: color 0.2s, background 0.2s;
   display: flex;
   align-items: center;
 }
-.logout-btn:hover { color: #ef4444; background: #fee2e2; }
+.logout-btn:hover { color: #b91c1c; background: #fee2e2; }
 </style>

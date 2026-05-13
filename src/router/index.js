@@ -28,8 +28,33 @@ import PaymentSettingsPage from '../modules/payments/pages/PaymentSettingsPage.v
 import PaymentLinksPage from '../modules/payments/pages/PaymentLinksPage.vue'
 import InvoiceListPage from '../modules/invoices/pages/InvoiceListPage.vue'
 import InvoiceDetailPage from '../modules/invoices/pages/InvoiceDetailPage.vue'
+import OrganizationListPage from '../modules/organizations/pages/OrganizationListPage.vue'
+import OrganizationCreatePage from '../modules/organizations/pages/OrganizationCreatePage.vue'
+import OrganizationEditPage from '../modules/organizations/pages/OrganizationEditPage.vue'
+import OrganizationDetailPage from '../modules/organizations/pages/OrganizationDetailPage.vue'
+import OrganizationInvitationsPage from '../modules/prm/pages/OrganizationInvitationsPage.vue'
+import InvitationPreviewPage from '../modules/prm/pages/InvitationPreviewPage.vue'
+import InvitationAcceptPage from '../modules/prm/pages/InvitationAcceptPage.vue'
+import PartnerDashboardPage from '@/modules/prm/pages/PartnerDashboardPage.vue'
+import PartnerResourcesPage from '@/modules/prm/pages/PartnerResourcesPage.vue'
+import ProgramManagementPage from '@/modules/prm/pages/ProgramManagementPage.vue'
+import ProgramEnrollmentsPage from '@/modules/prm/pages/ProgramEnrollmentsPage.vue'
+import PartnerMyProgramPage from '@/modules/prm/pages/PartnerMyProgramPage.vue'
+import CommissionPage from '@/modules/prm/pages/CommissionPage.vue'
+import LicenseManagementPage from '@/modules/prm/pages/LicenseManagementPage.vue'
 import ProtectedLayout from '@/shared/components/ProtectedLayout.vue'
 import { authAndRoleGuard } from '@/router/guards/accessGuards'
+
+const prmTenantAdminRoles = ['global_admin', 'company_admin']
+const prmPartnerChannelRoles = [
+  'global_admin',
+  'company_admin',
+  'partner_admin',
+  'partner_sales_manager',
+  'partner_sales_consultant',
+  'reseller_admin',
+  'reseller_sales_consultant',
+]
 
 const routes = [
   { path: '/', component: LandingPage },
@@ -38,6 +63,10 @@ const routes = [
   { path: '/forgot-password', component: ForgotPasswordPage },
   { path: '/reset-password', component: ResetPasswordPage },
   { path: '/verify-email/:id/:hash', component: EmailVerificationResultPage },
+  { path: '/prm/invite', component: InvitationPreviewPage },
+  { path: '/prm/invite/accept', component: InvitationAcceptPage },
+  { path: '/partner/invite', component: InvitationPreviewPage },
+  { path: '/partner/accept', component: InvitationAcceptPage },
   {
     path: '/app',
     component: ProtectedLayout,
@@ -47,23 +76,92 @@ const routes = [
       { path: 'users', component: UsersPage, meta: { roles: ['global_admin', 'company_admin'] } },
       { path: 'tenants', component: TenantsPage, meta: { roles: ['global_admin'] } },
       { path: 'teams', component: TeamsPage, meta: { roles: ['global_admin', 'company_admin'] } },
-      { path: 'companies', component: CompaniesPage, meta: { roles: ['global_admin', 'company_admin'] } },
-      { path: 'companies/:id', component: CompanyDetailPage, meta: { roles: ['global_admin', 'company_admin'] } },
-      { path: 'contacts', component: ContactsPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'contacts/:id', component: ContactDetailPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'deals', component: DealsPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'deals/:id', component: DealDetailPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'products', component: ProductListPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'products/create', component: ProductCreatePage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'products/:id/edit', component: ProductEditPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'collaterals', component: CollateralListPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'quotes', component: QuoteListPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'quotes/create', component: QuoteCreatePage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'quotes/:id/edit', component: QuoteEditPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'quotes/:id', component: QuoteDetailPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'payments', component: PaymentLinksPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'invoices', component: InvoiceListPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
-      { path: 'invoices/:id', component: InvoiceDetailPage, meta: { roles: ['global_admin', 'company_admin', 'user'] } },
+      { path: 'companies', component: CompaniesPage },
+      { path: 'companies/:id', component: CompanyDetailPage },
+      { path: 'contacts', component: ContactsPage },
+      { path: 'contacts/:id', component: ContactDetailPage },
+      { path: 'deals', component: DealsPage },
+      { path: 'deals/:id', component: DealDetailPage },
+      { path: 'products', component: ProductListPage },
+      { path: 'products/create', component: ProductCreatePage },
+      { path: 'products/:id/edit', component: ProductEditPage },
+      { path: 'collaterals', component: CollateralListPage },
+      { path: 'quotes', component: QuoteListPage },
+      { path: 'quotes/create', component: QuoteCreatePage },
+      { path: 'quotes/:id/edit', component: QuoteEditPage },
+      { path: 'quotes/:id', component: QuoteDetailPage },
+      { path: 'payments', component: PaymentLinksPage },
+      { path: 'invoices', component: InvoiceListPage },
+      { path: 'invoices/:id', component: InvoiceDetailPage },
+      { path: 'prm/dashboard', component: PartnerDashboardPage, meta: { requiredFeatures: ['prm_enabled'] } },
+      { path: 'prm/resources', component: PartnerResourcesPage, meta: { requiredFeatures: ['prm_enabled'] } },
+      {
+        path: 'prm/my-program',
+        component: PartnerMyProgramPage,
+        meta: {
+          roles: [
+            'partner_admin',
+            'partner_sales_manager',
+            'partner_sales_consultant',
+            'reseller_admin',
+            'reseller_sales_consultant',
+          ],
+          requiredFeatures: ['prm_enabled'],
+        },
+      },
+      { path: 'prm/programs', component: ProgramManagementPage, meta: { roles: prmTenantAdminRoles, requiredFeatures: ['prm_enabled'] } },
+      {
+        path: 'prm/program-enrollments',
+        component: ProgramEnrollmentsPage,
+        meta: { roles: prmTenantAdminRoles, requiredFeatures: ['prm_enabled'] },
+      },
+      { path: 'prm/commissions', component: CommissionPage, meta: { roles: prmPartnerChannelRoles, requiredFeatures: ['prm_enabled'] } },
+      { path: 'prm/licenses', component: LicenseManagementPage, meta: { roles: prmPartnerChannelRoles, requiredFeatures: ['prm_enabled'] } },
+      {
+        path: 'organizations',
+        component: OrganizationListPage,
+        meta: {
+          roles: [
+            'global_admin',
+            'company_admin',
+            'partner_admin',
+            'partner_sales_manager',
+            'partner_sales_consultant',
+            'reseller_admin',
+            'reseller_sales_consultant',
+          ],
+        },
+      },
+      {
+        path: 'organizations/create',
+        component: OrganizationCreatePage,
+        meta: { roles: ['global_admin', 'company_admin', 'partner_admin'] },
+      },
+      {
+        path: 'organizations/:id/invitations',
+        component: OrganizationInvitationsPage,
+        meta: { roles: ['global_admin', 'company_admin', 'partner_admin'] },
+      },
+      {
+        path: 'organizations/:id',
+        component: OrganizationDetailPage,
+        meta: {
+          roles: [
+            'global_admin',
+            'company_admin',
+            'partner_admin',
+            'partner_sales_manager',
+            'partner_sales_consultant',
+            'reseller_admin',
+            'reseller_sales_consultant',
+          ],
+        },
+      },
+      {
+        path: 'organizations/:id/edit',
+        component: OrganizationEditPage,
+        meta: { roles: ['global_admin', 'company_admin', 'partner_admin'] },
+      },
       { path: 'settings/payment', component: PaymentSettingsPage, meta: { roles: ['global_admin', 'company_admin'] } },
     ],
   },
@@ -80,6 +178,16 @@ const routes = [
   { path: '/quotes', redirect: '/app/quotes' },
   { path: '/payments', redirect: '/app/payments' },
   { path: '/invoices', redirect: '/app/invoices' },
+  { path: '/organizations', redirect: '/app/organizations' },
+  { path: '/partner/dashboard', redirect: '/app/prm/dashboard' },
+  { path: '/partner/resources', redirect: '/app/prm/resources' },
+  { path: '/partner/my-program', redirect: '/app/prm/my-program' },
+  { path: '/partner/commissions', redirect: '/app/prm/commissions' },
+  { path: '/partner/licenses', redirect: '/app/prm/licenses' },
+  { path: '/partner/programs', redirect: '/app/prm/programs' },
+  { path: '/partner/program-enrollments', redirect: '/app/prm/program-enrollments' },
+  { path: '/partner/leads', redirect: '/app/contacts' },
+  { path: '/partner/opportunities', redirect: '/app/deals' },
   // catch-all → landing
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
