@@ -36,7 +36,7 @@ import OrganizationInvitationsPage from '../modules/prm/pages/OrganizationInvita
 import InvitationPreviewPage from '../modules/prm/pages/InvitationPreviewPage.vue'
 import InvitationAcceptPage from '../modules/prm/pages/InvitationAcceptPage.vue'
 import PartnerDashboardPage from '@/modules/prm/pages/PartnerDashboardPage.vue'
-import PartnerResourcesPage from '@/modules/prm/pages/PartnerResourcesPage.vue'
+import PrmResourceCenterPage from '@/modules/prm/pages/PrmResourceCenterPage.vue'
 import ProgramManagementPage from '@/modules/prm/pages/ProgramManagementPage.vue'
 import ProgramEnrollmentsPage from '@/modules/prm/pages/ProgramEnrollmentsPage.vue'
 import PartnerMyProgramPage from '@/modules/prm/pages/PartnerMyProgramPage.vue'
@@ -94,7 +94,7 @@ const routes = [
       { path: 'invoices', component: InvoiceListPage },
       { path: 'invoices/:id', component: InvoiceDetailPage },
       { path: 'prm/dashboard', component: PartnerDashboardPage, meta: { requiredFeatures: ['prm_enabled'] } },
-      { path: 'prm/resources', component: PartnerResourcesPage, meta: { requiredFeatures: ['prm_enabled'] } },
+      { path: 'prm/resources', component: PrmResourceCenterPage, meta: { requiredFeatures: ['prm_enabled'] } },
       {
         path: 'prm/my-program',
         component: PartnerMyProgramPage,
