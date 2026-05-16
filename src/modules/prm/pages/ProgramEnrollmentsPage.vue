@@ -10,8 +10,8 @@ import DataTable from '@/shared/components/DataTable.vue'
 const prmStore = usePrmStore()
 const toast = useToast()
 
-const partnerOrganizations = ref<OrganizationItem[]>([])
-const partnersLoading = ref(false)
+const enrollOrganizations = ref<OrganizationItem[]>([])
+const orgsLoading = ref(false)
 const enrollOrgId = ref<number | null>(null)
 const enrolling = ref(false)
 
@@ -22,7 +22,7 @@ const enrollForm = reactive({
 })
 
 const enrollmentColumns = [
-  { key: 'org', label: 'Partner organization' },
+  { key: 'org', label: 'Organization' },
   { key: 'orgType', label: 'Organization type' },
   { key: 'program', label: 'Partner program' },
   { key: 'commission', label: 'Commission %' },
@@ -44,9 +44,29 @@ const selectedOrganizationId = computed(() => {
 
 const canViewEnrollments = computed(() => selectedOrganizationId.value != null)
 
+const selectedOrganization = computed(() => {
+  const id = selectedOrganizationId.value
+  if (id == null) return null
+  return enrollOrganizations.value.find((x) => x.id === id) ?? null
+})
+
+const isPartnerManagedReseller = computed(
+  () => selectedOrganization.value?.type === 'reseller' && selectedOrganization.value?.channel_mode === 'partner_managed',
+)
+
+const isDirectReseller = computed(
+  () => selectedOrganization.value?.type === 'reseller' && selectedOrganization.value?.channel_mode === 'direct',
+)
+
+const canEnrollSelectedOrg = computed(() => {
+  if (!selectedOrganization.value) return false
+  if (selectedOrganization.value.type === 'partner') return true
+  return isDirectReseller.value
+})
+
 const enrollOrgDisplayName = computed(() => {
   if (enrollOrgId.value == null) return ''
-  const o = partnerOrganizations.value.find((x) => x.id === enrollOrgId.value)
+  const o = enrollOrganizations.value.find((x) => x.id === enrollOrgId.value)
   return o ? orgDisplayName(o) : ''
 })
 
@@ -59,45 +79,40 @@ watch(
 
 onMounted(async () => {
   try {
-    await Promise.all([prmStore.fetchPrograms(), loadPartnerOrganizations()])
+    await Promise.all([prmStore.fetchPrograms(), loadEnrollOrganizations()])
   } catch {
     toast.error(prmStore.message || 'Failed to load data.')
   }
 })
 
-async function loadPartnerOrganizations() {
-  partnersLoading.value = true
+async function loadEnrollOrganizations() {
+  orgsLoading.value = true
   const all: OrganizationItem[] = []
   try {
-    let page = 1
-    const per_page = 100
-    let lastPage = 1
-    do {
-      const { data } = await organizationsApi.list({
-        page,
-        per_page,
-        type: 'partner',
-        status: 'active',
-      })
-      const items = data.data.items.filter((o) => o.type === 'partner' && o.status === 'active')
-      all.push(...items)
-      lastPage = data.data.pagination.last_page
-      page += 1
-    } while (page <= lastPage && page <= 50)
-
-    partnerOrganizations.value = all
+    for (const type of ['partner', 'reseller'] as const) {
+      let page = 1
+      const per_page = 100
+      let lastPage = 1
+      do {
+        const { data } = await organizationsApi.list({ page, per_page, type, status: 'active' })
+        all.push(...data.data.items.filter((o) => o.status === 'active'))
+        lastPage = data.data.pagination.last_page
+        page += 1
+      } while (page <= lastPage && page <= 50)
+    }
+    enrollOrganizations.value = all.sort((a, b) => orgDisplayName(a).localeCompare(orgDisplayName(b)))
   } catch {
-    partnerOrganizations.value = []
-    toast.error('Failed to load partner organizations.')
+    enrollOrganizations.value = []
+    toast.error('Failed to load organizations.')
   } finally {
-    partnersLoading.value = false
+    orgsLoading.value = false
   }
 }
 
 async function loadEnrollments() {
   const id = selectedOrganizationId.value
   if (id == null) {
-    toast.error('Select a partner organization.')
+    toast.error('Select an organization.')
     return
   }
   enrollOrgId.value = id
@@ -128,7 +143,7 @@ function enrollmentOrganizationName(e: ProgramEnrollmentItem): string {
     if (l) return l
   }
   if (enrollOrgId.value != null) {
-    const match = partnerOrganizations.value.find((x) => x.id === enrollOrgId.value)
+    const match = enrollOrganizations.value.find((x) => x.id === enrollOrgId.value)
     if (match) return orgDisplayName(match)
   }
   return '—'
@@ -180,7 +195,11 @@ async function enroll() {
   const oid = selectedOrganizationId.value
   const pid = Number(enrollForm.partner_program_id)
   if (oid == null) {
-    toast.error('Select a partner organization.')
+    toast.error('Select an organization.')
+    return
+  }
+  if (!canEnrollSelectedOrg.value) {
+    toast.error('This reseller inherits commercial terms from its parent partner.')
     return
   }
   if (!Number.isFinite(pid) || pid <= 0) {
@@ -233,11 +252,16 @@ async function enroll() {
       <p class="mt-1 text-xs text-slate-500">Duplicate enrollments are rejected by the server.</p>
       <div class="mt-4 grid gap-3 md:grid-cols-2">
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-slate-600" for="pen-partner">Partner organization</label>
-          <select id="pen-partner" v-model="enrollForm.organization_id" class="rc-input" :disabled="partnersLoading">
-            <option value="" disabled>{{ partnersLoading ? 'Loading…' : 'Choose partner organization' }}</option>
-            <option v-for="o in partnerOrganizations" :key="o.id" :value="String(o.id)">{{ orgDisplayName(o) }}</option>
+          <label class="text-xs font-medium text-slate-600" for="pen-partner">Organization</label>
+          <select id="pen-partner" v-model="enrollForm.organization_id" class="rc-input" :disabled="orgsLoading">
+            <option value="" disabled>{{ orgsLoading ? 'Loading…' : 'Choose organization' }}</option>
+            <option v-for="o in enrollOrganizations" :key="o.id" :value="String(o.id)">
+              {{ orgDisplayName(o) }} ({{ o.type }}{{ o.channel_mode ? ` · ${o.channel_mode === 'partner_managed' ? 'managed' : 'direct'}` : '' }})
+            </option>
           </select>
+          <p v-if="isPartnerManagedReseller" class="mt-2 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            Inherits commercial terms from the parent partner program.
+          </p>
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-xs font-medium text-slate-600" for="pen-program">Partner program</label>
@@ -262,7 +286,7 @@ async function enroll() {
         </div>
       </div>
       <div class="mt-4 flex flex-wrap gap-2">
-        <button type="button" class="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" :disabled="enrolling" @click="enroll">
+        <button type="button" class="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" :disabled="enrolling || !canEnrollSelectedOrg" @click="enroll">
           {{ enrolling ? 'Saving…' : 'Save enrollment' }}
         </button>
         <button

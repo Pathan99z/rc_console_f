@@ -7,9 +7,12 @@ import type {
   InvitationAcceptPayload,
   InvitationPreviewData,
   InvitationsListResponse,
+  LicenseActivatePayload,
   LicenseAllocatePayload,
   LicenseConsumePayload,
+  LicenseEntitlementItem,
   LicenseEntitlementsListResponse,
+  LicenseTransferPayload,
   PartnerCollateralsListResponse,
   PartnerDashboardData,
   PartnerLeadPayload,
@@ -135,5 +138,13 @@ export const prmApi = {
 
   licenseEntitlementsConsume(entitlementId: number, payload: LicenseConsumePayload) {
     return apiClient.post<ApiEnvelope<unknown>>(`/prm/license-entitlements/${entitlementId}/consume`, payload)
+  },
+
+  licenseEntitlementsTransfer(payload: LicenseTransferPayload) {
+    return apiClient.post<ApiEnvelope<{ entitlement: LicenseEntitlementItem }>>('/prm/license-entitlements/transfer', payload)
+  },
+
+  licenseEntitlementsActivate(entitlementId: number, payload: LicenseActivatePayload) {
+    return apiClient.post<ApiEnvelope<unknown>>(`/prm/license-entitlements/${entitlementId}/activate`, payload)
   },
 }

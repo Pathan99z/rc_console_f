@@ -80,7 +80,20 @@ const emptyParentHint = computed(() => {
 const parentSelectPlaceholder = computed(() => {
   if (props.parentPickerWaitingForTenant) return 'Select tenant ID first (global admin)'
   if (props.parentsLoading) return 'Loading parents…'
-  return 'Select parent'
+  return 'Select parent organization'
+})
+
+const selectedParent = computed(() => {
+  const id = Number(model.value.parent_organization_id)
+  if (!Number.isFinite(id) || id <= 0) return null
+  return eligibleParents.value.find((p) => p.id === id) ?? null
+})
+
+const resellerChannelLabel = computed(() => {
+  if (model.value.type !== 'reseller' || !selectedParent.value) return ''
+  if (selectedParent.value.type === 'company') return 'Direct reseller — RC enrolled programs apply to this organization.'
+  if (selectedParent.value.type === 'partner') return 'Partner-managed reseller — inherits commercial terms from the parent partner.'
+  return ''
 })
 </script>
 
@@ -113,9 +126,12 @@ const parentSelectPlaceholder = computed(() => {
       >
         <option value="">{{ parentSelectPlaceholder }}</option>
         <option v-for="parent in eligibleParents" :key="parent.id" :value="String(parent.id)">
-          {{ parent.display_name || parent.legal_name }} ({{ parent.type }})
+          {{ parent.display_name || parent.legal_name }}{{ parent.legal_name && parent.display_name !== parent.legal_name ? ` · ${parent.legal_name}` : '' }} — {{ parent.type }}
         </option>
       </select>
+      <p v-if="resellerChannelLabel" class="mt-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
+        {{ resellerChannelLabel }}
+      </p>
       <template v-if="showParentField">
         <p v-if="parentPickerWaitingForTenant" class="mt-1 text-xs text-slate-600">
           Enter the target tenant ID so valid parents can be loaded.

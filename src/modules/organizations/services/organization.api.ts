@@ -7,6 +7,13 @@ import type {
   OrganizationResponse,
   OrganizationsListResponse,
 } from '@/modules/organizations/types/organization.types'
+import type {
+  OrganizationUserInvitePayload,
+  OrganizationUserInviteResponse,
+  OrganizationUsersListResponse,
+  OrganizationUserStatusPayload,
+  OrganizationUserStatusResponse,
+} from '@/modules/organizations/types/organization.users.types'
 
 export const organizationsApi = {
   list(params: OrganizationListQuery) {
@@ -35,5 +42,27 @@ export const organizationsApi = {
   },
   suspend(organizationId: number) {
     return apiClient.post<OrganizationResponse>(`/organizations/${organizationId}/suspend`, {})
+  },
+
+  listUsers(organizationId: number, params?: { page?: number; per_page?: number }) {
+    return apiClient.get<OrganizationUsersListResponse>(`/organizations/${organizationId}/users`, { params })
+  },
+
+  inviteUser(organizationId: number, payload: OrganizationUserInvitePayload) {
+    return apiClient.post<OrganizationUserInviteResponse>(`/organizations/${organizationId}/users/invite`, payload)
+  },
+
+  updateUserStatus(organizationId: number, userId: number, payload: OrganizationUserStatusPayload) {
+    return apiClient.patch<OrganizationUserStatusResponse>(
+      `/organizations/${organizationId}/users/${userId}/status`,
+      payload,
+    )
+  },
+
+  resetUserPassword(organizationId: number, userId: number) {
+    return apiClient.post<{ success: boolean; message: string; data: Record<string, never> }>(
+      `/organizations/${organizationId}/users/${userId}/reset-password`,
+      {},
+    )
   },
 }

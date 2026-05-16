@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios'
+import { isOnboardingBlockedResponse, setOnboardingBlocked } from '@/modules/auth/composables/useOnboardingGate'
 
 function normalizeLoopbackBaseUrl(rawBaseUrl: string | undefined): string | undefined {
   if (!rawBaseUrl) return undefined
@@ -65,7 +66,10 @@ apiClient.interceptors.response.use(
     if (status === 403) {
       const message = payload?.message || 'Access denied.'
       const isSessionUserEndpoint = requestUrl === '/user' || requestUrl.endsWith('/user')
-      if (isSessionUserEndpoint && !requestUrl.includes('/users')) {
+      if (isOnboardingBlockedResponse(status, payload)) {
+        setOnboardingBlocked(true)
+        globalThis.dispatchEvent(new CustomEvent('rc:onboarding-blocked', { detail: { message } }))
+      } else if (isSessionUserEndpoint && !requestUrl.includes('/users')) {
         localStorage.removeItem(TOKEN_KEY)
         localStorage.removeItem('isAuth')
         if (globalThis.location.pathname !== '/login') {

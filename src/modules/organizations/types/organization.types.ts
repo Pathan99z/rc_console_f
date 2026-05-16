@@ -1,6 +1,7 @@
 import type { Pagination } from '@/modules/users/services/users.api'
 
 export type OrganizationType = 'company' | 'partner' | 'reseller'
+export type OrganizationChannelMode = 'direct' | 'partner_managed'
 export type OrganizationStatus = 'active' | 'inactive'
 export type OrganizationOnboardingStatus = 'draft' | 'pending_review' | 'approved' | 'active' | 'suspended' | 'rejected'
 
@@ -9,6 +10,7 @@ export type OrganizationItem = {
   tenant_id: number
   parent_organization_id?: number | null
   type: OrganizationType
+  channel_mode?: OrganizationChannelMode | null
   legal_name: string
   display_name: string
   registration_number?: string | null

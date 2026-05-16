@@ -18,11 +18,12 @@ const emit = defineEmits<{
 <template>
   <div class="flex flex-wrap gap-2">
     <button
-      class="rounded border px-3 py-1.5 text-xs"
+      v-if="item.onboarding_status === 'pending_review' || item.onboarding_status === 'draft'"
+      class="rounded border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800"
       :disabled="!canManage || busy('approve', item.id)"
       @click="emit('approve', item.id)"
     >
-      Approve
+      Approve reseller
     </button>
     <button class="rounded border px-3 py-1.5 text-xs" :disabled="!canManage || busy('reject', item.id)" @click="emit('reject', item.id)">
       Reject

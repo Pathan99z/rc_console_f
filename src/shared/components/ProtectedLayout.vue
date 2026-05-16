@@ -1,11 +1,33 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { RouterView } from 'vue-router'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import AppSidebar from '@/shared/components/AppSidebar.vue'
+import OnboardingPendingScreen from '@/shared/components/OnboardingPendingScreen.vue'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { onboardingBlocked, setOnboardingBlocked } from '@/modules/auth/composables/useOnboardingGate'
 
 const sidebarCollapsed = ref(false)
 const authStore = useAuthStore()
+const route = useRoute()
+
+const crmPaths = ['/app/contacts', '/app/companies', '/app/deals', '/app/quotes', '/app/payments', '/app/invoices']
+
+const showOnboardingGate = computed(() => {
+  if (!onboardingBlocked.value) return false
+  return crmPaths.some((p) => route.path === p || route.path.startsWith(`${p}/`))
+})
+
+function onOnboardingBlocked() {
+  setOnboardingBlocked(true)
+}
+
+onMounted(() => {
+  globalThis.addEventListener('rc:onboarding-blocked', onOnboardingBlocked)
+})
+
+onUnmounted(() => {
+  globalThis.removeEventListener('rc:onboarding-blocked', onOnboardingBlocked)
+})
 
 const userInitials = computed(() => {
   const name = authStore.user?.name || 'User'
@@ -60,7 +82,8 @@ const userInitials = computed(() => {
           </div>
         </header>
         <main class="p-6">
-          <RouterView />
+          <OnboardingPendingScreen v-if="showOnboardingGate" />
+          <RouterView v-else />
         </main>
       </div>
     </div>

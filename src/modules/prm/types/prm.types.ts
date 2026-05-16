@@ -201,14 +201,49 @@ export type ProgramEnrollmentsResponse = ApiEnvelope<{ items: ProgramEnrollmentI
 /** --- Commissions --- */
 export type CommissionAccrualStatus = 'pending' | 'approved' | 'paid' | 'void' | string
 
+export type CommissionAccrualPartnerOrg = {
+  id: number
+  type?: string
+  display_name?: string
+  legal_name?: string
+  name?: string
+}
+
+export type CommissionAccrualQuote = {
+  id: number
+  quote_number?: string
+  deal_name?: string
+  total?: number
+  currency_code?: string
+  status_label?: string
+  payment_status_label?: string
+}
+
+export type CommissionAccrualPayoutRef = {
+  id: number
+  payout_number?: string
+  status?: string
+}
+
 export type CommissionAccrualItem = {
   id: number
   status: CommissionAccrualStatus
   amount?: number | string
+  commission_amount?: number
+  base_amount?: number
+  currency_code?: string
+  partner_organization_id?: number
   quote_id?: number | null
   payment_record_id?: number | null
+  summary?: string
+  partner_organization?: CommissionAccrualPartnerOrg
+  quote?: CommissionAccrualQuote
+  payout?: CommissionAccrualPayoutRef | null
+  in_payout?: boolean
+  available_for_payout?: boolean
+  approved_at?: string | null
+  paid_at?: string | null
   created_at?: string
-  [key: string]: unknown
 }
 
 export type CommissionAccrualsListResponse = ApiEnvelope<{ items: CommissionAccrualItem[]; pagination: Pagination }>
@@ -251,4 +286,19 @@ export type LicenseAllocatePayload = {
 
 export type LicenseConsumePayload = {
   units: number
+}
+
+export type LicenseTransferPayload = {
+  from_entitlement_id: number
+  to_organization_id: number
+  units: number
+  notes?: string
+  reference?: string
+}
+
+export type LicenseActivatePayload = {
+  units: number
+  contact_id: number
+  company_id: number
+  reference?: string
 }

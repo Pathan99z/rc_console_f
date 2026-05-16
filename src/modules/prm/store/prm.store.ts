@@ -322,6 +322,18 @@ export const usePrmStore = defineStore('prm', () => {
     await fetchLicenseEntitlements(entitlementsPagination.value.current_page, entitlementsPagination.value.per_page)
   }
 
+  async function transferLicenses(payload: Parameters<typeof prmApi.licenseEntitlementsTransfer>[0]) {
+    const { data } = await prmApi.licenseEntitlementsTransfer(payload)
+    message.value = data.message
+    await fetchLicenseEntitlements(entitlementsPagination.value.current_page, entitlementsPagination.value.per_page)
+  }
+
+  async function activateLicense(entitlementId: number, payload: Parameters<typeof prmApi.licenseEntitlementsActivate>[1]) {
+    const { data } = await prmApi.licenseEntitlementsActivate(entitlementId, payload)
+    message.value = data.message
+    await fetchLicenseEntitlements(entitlementsPagination.value.current_page, entitlementsPagination.value.per_page)
+  }
+
   async function fetchInvitations(organizationId: number, page = 1, perPage = 15) {
     invitationsLoading.value = true
     errors.value = {}
@@ -411,6 +423,8 @@ export const usePrmStore = defineStore('prm', () => {
     fetchLicenseEntitlements,
     allocateLicenses,
     consumeLicenseUnits,
+    transferLicenses,
+    activateLicense,
     fetchInvitations,
     createInvitation,
     resendInvitation,

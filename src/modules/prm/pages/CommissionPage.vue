@@ -4,6 +4,13 @@ import PaginationControls from '@/shared/components/PaginationControls.vue'
 import { useToast } from '@/shared/utils/useToast'
 import { useAuth } from '@/modules/auth/composables/useAuth'
 import { usePrmStore } from '@/modules/prm/store/prm.store'
+import {
+  accrualAmountLabel,
+  accrualPartnerLabel,
+  accrualPayoutLabel,
+  accrualQuoteLabel,
+  accrualSummaryLabel,
+} from '@/modules/prm/utils/commissionDisplay'
 import type { CommissionAccrualItem } from '@/modules/prm/types/prm.types'
 
 const prmStore = usePrmStore()
@@ -69,27 +76,32 @@ function statusClass(status: string) {
       <table class="min-w-full text-sm">
         <thead class="bg-slate-50 text-xs uppercase text-slate-500">
           <tr>
-            <th class="px-4 py-3 text-left">ID</th>
-            <th class="px-4 py-3 text-left">Amount</th>
+            <th class="px-4 py-3 text-left">Partner / org</th>
+            <th class="px-4 py-3 text-left">Quote / deal</th>
+            <th class="px-4 py-3 text-right">Commission</th>
             <th class="px-4 py-3 text-left">Status</th>
-            <th class="px-4 py-3 text-left">Quote</th>
+            <th class="px-4 py-3 text-left">Payout</th>
             <th v-if="canUpdateStatus" class="px-4 py-3 text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="prmStore.accrualsLoading">
-            <td :colspan="canUpdateStatus ? 5 : 4" class="px-4 py-8 text-center text-slate-500">Loading…</td>
+            <td :colspan="canUpdateStatus ? 6 : 5" class="px-4 py-8 text-center text-slate-500">Loading…</td>
           </tr>
           <tr v-else-if="!visibleAccruals.length">
-            <td :colspan="canUpdateStatus ? 5 : 4" class="px-4 py-8 text-center text-slate-500">No accruals on this page.</td>
+            <td :colspan="canUpdateStatus ? 6 : 5" class="px-4 py-8 text-center text-slate-500">No accruals on this page.</td>
           </tr>
           <tr v-for="row in visibleAccruals" v-else :key="row.id" class="border-t border-[var(--rc-border-soft)]">
-            <td class="px-4 py-3 font-mono text-xs">{{ row.id }}</td>
-            <td class="px-4 py-3">{{ row.amount ?? '—' }}</td>
             <td class="px-4 py-3">
-              <span class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="statusClass(String(row.status))">{{ row.status }}</span>
+              <p class="font-medium text-slate-900">{{ accrualPartnerLabel(row) }}</p>
+              <p class="text-xs text-slate-500" :title="accrualSummaryLabel(row)">#{{ row.id }}</p>
             </td>
-            <td class="px-4 py-3">{{ row.quote_id ?? '—' }}</td>
+            <td class="px-4 py-3">{{ accrualQuoteLabel(row) }}</td>
+            <td class="px-4 py-3 text-right tabular-nums font-medium">{{ accrualAmountLabel(row) }}</td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2 py-0.5 text-xs font-semibold capitalize" :class="statusClass(String(row.status))">{{ row.status }}</span>
+            </td>
+            <td class="px-4 py-3 text-xs text-slate-600">{{ accrualPayoutLabel(row) }}</td>
             <td v-if="canUpdateStatus" class="px-4 py-3 text-right">
               <button
                 v-if="row.status === 'pending'"
