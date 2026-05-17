@@ -5,10 +5,12 @@ import { toApiError } from '@/core/http/apiClient'
 import { useNavigationStore } from '@/modules/auth/store/navigation.store'
 import type {
   CapabilityProfile,
+  ChangePasswordPayload,
   ForgotPasswordPayload,
   LoginPayload,
   RegisterPayload,
   ResetPasswordPayload,
+  UpdateProfilePayload,
   User,
 } from '@/modules/auth/types/auth.types'
 
@@ -217,6 +219,53 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function updateProfile(payload: UpdateProfilePayload) {
+    loading.value = true
+    clearErrors()
+    try {
+      const { data } = await authApi.updateProfile(payload)
+      if (data.data?.user) {
+        setUser(data.data.user)
+      } else {
+        await fetchUser()
+      }
+      apiMessage.value = data.message
+      return data
+    } catch (error) {
+      const normalized = toApiError(error)
+      apiMessage.value = normalized.isTooManyRequests
+        ? 'Too many attempts. Please try again shortly.'
+        : normalized.message
+      errors.value = normalized.fieldErrors
+      throw normalized
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function changePassword(payload: ChangePasswordPayload) {
+    loading.value = true
+    clearErrors()
+    try {
+      const { data } = await authApi.changePassword(payload)
+      apiMessage.value = data.message
+      return data
+    } catch (error) {
+      const normalized = toApiError(error)
+      if (normalized.isTooManyRequests) {
+        apiMessage.value = 'Too many attempts. Please try again shortly.'
+      } else if (normalized.isForbidden) {
+        apiMessage.value = 'Your account is inactive. Password cannot be changed.'
+      } else {
+        apiMessage.value = normalized.message
+      }
+      errors.value = normalized.fieldErrors
+      throw normalized
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function logout() {
     loading.value = true
     const navigationStore = useNavigationStore()
@@ -255,5 +304,7 @@ export const useAuthStore = defineStore('auth', () => {
     resetPassword,
     resendVerification,
     verifyEmail,
+    updateProfile,
+    changePassword,
   }
 })

@@ -2,12 +2,12 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppSidebar from '@/shared/components/AppSidebar.vue'
+import NotificationBell from '@/modules/notifications/components/NotificationBell.vue'
+import UserProfileMenu from '@/modules/auth/components/UserProfileMenu.vue'
 import OnboardingPendingScreen from '@/shared/components/OnboardingPendingScreen.vue'
-import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { onboardingBlocked, setOnboardingBlocked } from '@/modules/auth/composables/useOnboardingGate'
 
 const sidebarCollapsed = ref(false)
-const authStore = useAuthStore()
 const route = useRoute()
 
 const crmPaths = ['/app/contacts', '/app/companies', '/app/deals', '/app/quotes', '/app/payments', '/app/invoices']
@@ -29,15 +29,6 @@ onUnmounted(() => {
   globalThis.removeEventListener('rc:onboarding-blocked', onOnboardingBlocked)
 })
 
-const userInitials = computed(() => {
-  const name = authStore.user?.name || 'User'
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-})
 </script>
 
 <template>
@@ -65,20 +56,14 @@ const userInitials = computed(() => {
           </div>
 
           <div class="topbar-right">
-            <button class="icon-btn" aria-label="Notifications">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.4-1.4a2 2 0 01-.6-1.4V11a6 6 0 00-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0m6 0H9" />
-              </svg>
-            </button>
+            <NotificationBell />
             <div class="search-wrap">
               <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input type="text" placeholder="Search..." class="search-input" />
             </div>
-            <button class="profile-btn" :aria-label="authStore.user?.name || 'Profile'">
-              {{ userInitials }}
-            </button>
+            <UserProfileMenu />
           </div>
         </header>
         <main class="p-6">
@@ -146,18 +131,4 @@ const userInitials = computed(() => {
 }
 .search-input:focus { border-color: #c7d2fe; background: #ffffff; }
 .search-input::placeholder { color: #9ca3af; }
-.profile-btn {
-  width: 34px;
-  height: 34px;
-  border: 1px solid #334155;
-  border-radius: 999px;
-  background: #334155;
-  color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.profile-btn:hover { background: #1e293b; border-color: #1e293b; }
 </style>

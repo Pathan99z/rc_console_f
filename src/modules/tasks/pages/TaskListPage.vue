@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PaginationControls from '@/shared/components/PaginationControls.vue'
 import { useToast } from '@/shared/utils/useToast'
 import TaskAssignModal from '@/modules/tasks/components/TaskAssignModal.vue'
@@ -15,6 +16,8 @@ import type { CreateTaskPayload, TaskItem, TaskListParams, TaskViewMode, UpdateT
 
 const store = useTaskStore()
 const toast = useToast()
+const route = useRoute()
+const router = useRouter()
 const { canManageTasks, canAssignTasks, availableViews, needsScopeOrgOnCreate, defaultOrgId } = useTaskAccess()
 
 const search = ref('')
@@ -65,6 +68,14 @@ onMounted(async () => {
   } catch {
     /* filter assignee list optional */
   }
+
+  const taskId = Number(route.query.task)
+  if (Number.isFinite(taskId) && taskId > 0) {
+    await openDetailById(taskId)
+    const nextQuery = { ...route.query }
+    delete nextQuery.task
+    await router.replace({ path: route.path, query: nextQuery })
+  }
 })
 
 function buildParams(): TaskListParams {
@@ -109,6 +120,18 @@ async function openDetail(task: TaskItem) {
   try {
     await store.fetchTask(task.id)
     selectedTask.value = store.currentTask
+  } catch {
+    toast.error(store.message || 'Could not load task.')
+  }
+}
+
+async function openDetailById(taskId: number) {
+  try {
+    await store.fetchTask(taskId)
+    if (store.currentTask) {
+      selectedTask.value = store.currentTask
+      showDetail.value = true
+    }
   } catch {
     toast.error(store.message || 'Could not load task.')
   }

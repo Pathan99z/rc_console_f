@@ -41,6 +41,7 @@ const companyAdminExtras: NavItem[] = [
   { to: '/app/users', label: 'Users', icon: 'userCog' },
   { to: '/app/teams', label: 'Teams', icon: 'team' },
   { to: '/app/settings/payment', label: 'Payment Settings', icon: 'settings' },
+  { to: '/app/settings/audit-logs', label: 'Audit Logs', icon: 'fileText', permission: 'audit.view' },
 ]
 
 const globalAdminExtras: NavItem[] = [{ to: '/app/tenants', label: 'Tenants', icon: 'globe' }]

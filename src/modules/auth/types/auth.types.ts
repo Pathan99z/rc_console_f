@@ -21,11 +21,22 @@ export interface User {
   created_at: string
   roles?: string[]
   permissions?: string[]
+  tenant?: {
+    id: number
+    name?: string
+  } | null
+  tenant_name?: string | null
   organization?: {
     id: number
     type: string
     parent_id?: number | null
+    display_name?: string | null
+    legal_name?: string | null
+    name?: string | null
   } | null
+  organization_name?: string | null
+  last_login_at?: string | null
+  last_login?: string | null
   organization_role?: string | null
   navigation_profile?: string | null
   feature_flags?: Record<string, boolean>
@@ -93,6 +104,16 @@ export interface ForgotPasswordPayload {
 export interface ResetPasswordPayload {
   token: string
   email: string
+  password: string
+  password_confirmation: string
+}
+
+export interface UpdateProfilePayload {
+  name: string
+}
+
+export interface ChangePasswordPayload {
+  current_password: string
   password: string
   password_confirmation: string
 }

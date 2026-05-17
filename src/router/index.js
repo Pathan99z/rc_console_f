@@ -26,6 +26,7 @@ import QuoteEditPage from '../modules/quotes/pages/QuoteEditPage.vue'
 import PublicQuotePage from '../modules/quotes/pages/PublicQuotePage.vue'
 import PaymentSettingsPage from '../modules/payments/pages/PaymentSettingsPage.vue'
 import EmailSettingsPage from '@/modules/settings/email/pages/EmailSettingsPage.vue'
+import AuditLogListPage from '@/modules/audit-logs/pages/AuditLogListPage.vue'
 import PaymentLinksPage from '../modules/payments/pages/PaymentLinksPage.vue'
 import InvoiceListPage from '../modules/invoices/pages/InvoiceListPage.vue'
 import InvoiceDetailPage from '../modules/invoices/pages/InvoiceDetailPage.vue'
@@ -62,6 +63,7 @@ import DemoLinkListPage from '@/modules/demo-links/pages/DemoLinkListPage.vue'
 import DemoLinkCreatePage from '@/modules/demo-links/pages/DemoLinkCreatePage.vue'
 import DemoLinkEditPage from '@/modules/demo-links/pages/DemoLinkEditPage.vue'
 import DemoLinkDetailPage from '@/modules/demo-links/pages/DemoLinkDetailPage.vue'
+import NotificationCenterPage from '@/modules/notifications/pages/NotificationCenterPage.vue'
 import ProtectedLayout from '@/shared/components/ProtectedLayout.vue'
 import { authAndRoleGuard } from '@/router/guards/accessGuards'
 
@@ -95,6 +97,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: 'dashboard', component: DashboardPage },
+      { path: 'notifications', component: NotificationCenterPage },
       { path: 'users', component: UsersPage, meta: { roles: ['global_admin', 'company_admin'] } },
       { path: 'tenants', component: TenantsPage, meta: { roles: ['global_admin'] } },
       { path: 'teams', component: TeamsPage, meta: { roles: ['global_admin', 'company_admin'] } },
@@ -289,6 +292,11 @@ const routes = [
         component: EmailSettingsPage,
         meta: { requiredPermissions: ['email_settings.view'] },
       },
+      {
+        path: 'settings/audit-logs',
+        component: AuditLogListPage,
+        meta: { requiredPermissions: ['audit.view'] },
+      },
     ],
   },
   { path: '/quote/public/:token', component: PublicQuotePage },
@@ -310,6 +318,7 @@ const routes = [
   { path: '/payments', redirect: '/app/payments' },
   { path: '/invoices', redirect: '/app/invoices' },
   { path: '/organizations', redirect: '/app/organizations' },
+  { path: '/audit-logs', redirect: '/app/settings/audit-logs' },
   { path: '/partner/dashboard', redirect: '/app/prm/dashboard' },
   { path: '/partner/reseller-dashboard', redirect: '/app/prm/reseller-dashboard' },
   { path: '/partner/resources', redirect: '/app/prm/resources' },

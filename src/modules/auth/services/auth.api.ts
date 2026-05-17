@@ -1,11 +1,13 @@
 import { apiClient } from '@/core/http/apiClient'
 import type {
   ApiEnvelope,
+  ChangePasswordPayload,
   ForgotPasswordPayload,
   LoginPayload,
   NavigationState,
   RegisterPayload,
   ResetPasswordPayload,
+  UpdateProfilePayload,
   User,
 } from '@/modules/auth/types/auth.types'
 
@@ -36,6 +38,12 @@ export const authApi = {
   },
   me() {
     return apiClient.get<UserResponse>('/user')
+  },
+  updateProfile(payload: UpdateProfilePayload) {
+    return apiClient.patch<UserResponse>('/user/profile', payload)
+  },
+  changePassword(payload: ChangePasswordPayload) {
+    return apiClient.patch<BasicResponse>('/user/password', payload)
   },
   navigation() {
     return apiClient.get<NavigationResponse>('/navigation')
