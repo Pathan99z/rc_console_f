@@ -18,8 +18,8 @@ export function useToast() {
     setTimeout(() => dismiss(id), duration)
   }
 
-  function success(message: string) {
-    push('success', message)
+  function success(message: string, duration = 4000) {
+    push('success', message, duration)
   }
   function error(message: string) {
     push('error', message)

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { tryShowPendingLoginWelcome } from '@/modules/auth/utils/loginWelcome'
 import logo from '@/assets/logo.png'
 
 const auth = useAuthStore()
@@ -38,7 +39,9 @@ async function onSubmit() {
   unverifiedState.value = false
   try {
     await auth.login({ ...form })
-    router.push(auth.getDefaultRoute())
+    await router.push(auth.getDefaultRoute())
+    await nextTick()
+    tryShowPendingLoginWelcome()
   } catch {
     const emailErrors = auth.errors.email || []
     unverifiedState.value = emailErrors.some((message) => message.toLowerCase().includes('verify your email'))
@@ -105,7 +108,7 @@ async function resendVerification() {
 
         <!-- Error banner -->
         <Transition name="fade">
-          <div v-if="auth.apiMessage" class="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
+          <div v-if="auth.apiMessage" class="mb-4 flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

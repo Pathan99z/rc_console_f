@@ -66,6 +66,7 @@ import DemoLinkDetailPage from '@/modules/demo-links/pages/DemoLinkDetailPage.vu
 import NotificationCenterPage from '@/modules/notifications/pages/NotificationCenterPage.vue'
 import ProtectedLayout from '@/shared/components/ProtectedLayout.vue'
 import { authAndRoleGuard } from '@/router/guards/accessGuards'
+import { tryShowPendingLoginWelcome } from '@/modules/auth/utils/loginWelcome'
 
 const prmTenantAdminRoles = ['global_admin', 'company_admin']
 const prmFinanceRoles = ['global_admin', 'company_admin', 'finance_admin']
@@ -343,5 +344,11 @@ const router = createRouter({
 })
 
 router.beforeEach(authAndRoleGuard)
+
+router.afterEach((to) => {
+  if (to.path.startsWith('/app')) {
+    tryShowPendingLoginWelcome()
+  }
+})
 
 export default router

@@ -6,6 +6,7 @@ import NotificationBell from '@/modules/notifications/components/NotificationBel
 import UserProfileMenu from '@/modules/auth/components/UserProfileMenu.vue'
 import OnboardingPendingScreen from '@/shared/components/OnboardingPendingScreen.vue'
 import { onboardingBlocked, setOnboardingBlocked } from '@/modules/auth/composables/useOnboardingGate'
+import { tryShowPendingLoginWelcome } from '@/modules/auth/utils/loginWelcome'
 
 const sidebarCollapsed = ref(false)
 const route = useRoute()
@@ -22,6 +23,7 @@ function onOnboardingBlocked() {
 }
 
 onMounted(() => {
+  tryShowPendingLoginWelcome()
   globalThis.addEventListener('rc:onboarding-blocked', onOnboardingBlocked)
 })
 

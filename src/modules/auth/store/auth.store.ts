@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { authApi } from '@/modules/auth/services/auth.api'
 import { toApiError } from '@/core/http/apiClient'
+import { queueLoginWelcome } from '@/modules/auth/utils/loginWelcome'
 import { useNavigationStore } from '@/modules/auth/store/navigation.store'
 import type {
   CapabilityProfile,
@@ -91,8 +92,10 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await authApi.login(payload)
       setToken(data.data.token)
       setUser(data.data.user)
-      apiMessage.value = data.message
+      apiMessage.value = ''
+      queueLoginWelcome(data.data.user?.name)
       await hydrateSession(true)
+      queueLoginWelcome(user.value?.name ?? data.data.user?.name)
       return data
     } catch (error) {
       const normalized = toApiError(error)
