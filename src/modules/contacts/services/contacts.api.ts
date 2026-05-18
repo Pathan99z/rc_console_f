@@ -110,7 +110,19 @@ export const contactsApi = {
   }) {
     return apiClient.post<ContactResponse>('/contacts', payload)
   },
-  update(contactId: number, payload: { lifecycle_stage?: number; assigned_user_id?: number }) {
+  update(
+    contactId: number,
+    payload: {
+      first_name?: string
+      last_name?: string
+      email?: string
+      phone?: string
+      lifecycle_stage?: number
+      company_id?: number
+      assigned_user_id?: number
+      meta?: Record<string, unknown>
+    },
+  ) {
     return apiClient.put<ContactResponse>(`/contacts/${contactId}`, payload)
   },
   remove(contactId: number) {

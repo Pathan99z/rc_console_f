@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/http/apiClient'
+import type { LoginDashboardApiEnvelope } from '@/modules/dashboard/types/loginDashboard.types'
 import type {
   DashboardApiEnvelope,
   DashboardApiQueryParams,
@@ -12,6 +13,11 @@ function orgDashboard(organizationId: number, suffix: string, params?: Dashboard
 }
 
 export const dashboardApi = {
+  /** Login home dashboard — GET /api/dashboard */
+  getLoginDashboard() {
+    return apiClient.get<LoginDashboardApiEnvelope>('/dashboard')
+  },
+
   /** Overview KPIs — GET .../organizations/{id}/dashboard (not /dashboard/overview). */
   getOrganizationDashboardOverview(organizationId: number, params?: DashboardApiQueryParams) {
     return orgDashboard(organizationId, '', params)

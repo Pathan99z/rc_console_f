@@ -168,6 +168,20 @@ async function openEdit(contact: ContactItem) {
     })
   }
 
+  if (contact.company && !contactsStore.companyOptions.some((c) => c.id === contact.company?.id)) {
+    contactsStore.companyOptions.unshift({
+      id: contact.company.id,
+      tenant_id: contact.tenant_id,
+      name: contact.company.name,
+      email: null,
+      phone: null,
+      website: null,
+      status: 'active',
+      created_at: contact.created_at,
+      updated_at: contact.updated_at,
+    })
+  }
+
   showEditModal.value = true
 }
 
@@ -181,13 +195,22 @@ async function submitEdit() {
   saving.value = true
   try {
     await contactsStore.updateContact(selectedContact.value.id, {
+      first_name: editForm.first_name.trim(),
+      last_name: editForm.last_name.trim(),
+      email: editForm.email.trim() || undefined,
+      phone: editForm.phone.trim() || undefined,
       lifecycle_stage: stageToNumber(editForm.lifecycle_stage),
+      company_id: Number(editForm.company_id || 0) || undefined,
       assigned_user_id: Number(editForm.assigned_user_id || 0) || undefined,
+      meta: {
+        source: editForm.meta_source.trim() || undefined,
+        city: editForm.meta_city.trim() || undefined,
+      },
     })
     toast.success('Contact updated successfully.')
     closeEdit()
   } catch {
-    toast.error(contactsStore.message || 'Update failed.')
+    toast.error(firstValidationMessage(contactsStore.errors) || contactsStore.message || 'Update failed.')
   } finally {
     saving.value = false
   }
@@ -306,8 +329,28 @@ const hasContacts = computed(() => contactsStore.items.length > 0)
           <option value="customer">customer</option>
           <option value="inactive">inactive</option>
         </select>
-        <input v-model="contactsStore.filters.owner_id" type="number" class="rc-input" placeholder="Owner ID" />
-        <input v-model="contactsStore.filters.company_id" type="number" class="rc-input" placeholder="Company ID" />
+        <select
+          v-model="contactsStore.filters.owner_id"
+          class="rc-input"
+          aria-label="Filter by owner"
+          @focus="contactsStore.fetchAssignableUsers()"
+        >
+          <option value="">All owners</option>
+          <option v-for="user in contactsStore.assignableUsers" :key="user.id" :value="String(user.id)">
+            {{ user.name }}
+          </option>
+        </select>
+        <select
+          v-model="contactsStore.filters.company_id"
+          class="rc-input"
+          aria-label="Filter by company"
+          @focus="contactsStore.fetchCompanyOptions()"
+        >
+          <option value="">All companies</option>
+          <option v-for="company in contactsStore.companyOptions" :key="company.id" :value="String(company.id)">
+            {{ company.name }}
+          </option>
+        </select>
         <input v-model.trim="contactsStore.filters.search" class="rc-input" placeholder="Search name/email" @keyup.enter="contactsStore.fetchContacts(1, contactsStore.pagination.per_page)" />
       </div>
       <div class="mt-3 flex flex-wrap gap-2">
@@ -463,11 +506,11 @@ const hasContacts = computed(() => contactsStore.items.length > 0)
         <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600">First Name</label>
-            <input v-model="editForm.first_name" class="rc-input" disabled />
+            <input v-model.trim="editForm.first_name" class="rc-input" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600">Last Name</label>
-            <input v-model="editForm.last_name" class="rc-input" disabled />
+            <input v-model.trim="editForm.last_name" class="rc-input" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600">Email</label>
@@ -475,7 +518,7 @@ const hasContacts = computed(() => contactsStore.items.length > 0)
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600">Phone</label>
-            <input v-model="editForm.phone" class="rc-input" disabled />
+            <input v-model.trim="editForm.phone" class="rc-input" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600">Lifecycle Stage</label>
@@ -488,7 +531,7 @@ const hasContacts = computed(() => contactsStore.items.length > 0)
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600">Company</label>
-            <select v-model="editForm.company_id" class="rc-input" disabled>
+            <select v-model="editForm.company_id" class="rc-input" @focus="contactsStore.fetchCompanyOptions()">
               <option value="">Select company</option>
               <option v-for="company in contactsStore.companyOptions" :key="company.id" :value="String(company.id)">
                 {{ company.name }}
@@ -506,11 +549,11 @@ const hasContacts = computed(() => contactsStore.items.length > 0)
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600">Source</label>
-            <input v-model="editForm.meta_source" class="rc-input" disabled />
+            <input v-model.trim="editForm.meta_source" class="rc-input" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600">City</label>
-            <input v-model="editForm.meta_city" class="rc-input" disabled />
+            <input v-model.trim="editForm.meta_city" class="rc-input" />
           </div>
         </div>
         <div class="mt-4 flex justify-end gap-2">

@@ -25,14 +25,15 @@ export const useContactsStore = defineStore('contacts', () => {
   const companyOptions = ref<CompanyItem[]>([])
   const filters = ref({
     stage: '',
-    owner_id: '' as number | '',
-    company_id: '' as number | '',
+    owner_id: '' as string | number | '',
+    company_id: '' as string | number | '',
     search: '',
   })
 
-  function toOptionalNumber(value: number | ''): number | undefined {
-    if (value === '') return undefined
-    return Number(value)
+  function toOptionalNumber(value: string | number | ''): number | undefined {
+    if (value === '' || value === null || value === undefined) return undefined
+    const n = Number(value)
+    return Number.isFinite(n) ? n : undefined
   }
 
   function toStageCode(stage: string): number | undefined {
