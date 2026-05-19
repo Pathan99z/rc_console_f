@@ -3,6 +3,6 @@
   <AppToast />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import AppToast from '@/shared/components/AppToast.vue'
 </script>

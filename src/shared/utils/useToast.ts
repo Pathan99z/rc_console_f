@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 
 type ToastType = 'success' | 'error' | 'info'
 
@@ -8,13 +8,15 @@ export type ToastItem = {
   message: string
 }
 
-const items = ref<ToastItem[]>([])
+/** Shared toast list — import in AppToast for reliable template reactivity. */
+export const toastItems = ref<ToastItem[]>([])
+
 let counter = 0
 
 export function useToast() {
   function push(type: ToastType, message: string, duration = 3000) {
     const id = ++counter
-    items.value.push({ id, type, message })
+    toastItems.value = [...toastItems.value, { id, type, message }]
     setTimeout(() => dismiss(id), duration)
   }
 
@@ -29,11 +31,11 @@ export function useToast() {
   }
 
   function dismiss(id: number) {
-    items.value = items.value.filter((t) => t.id !== id)
+    toastItems.value = toastItems.value.filter((t) => t.id !== id)
   }
 
   return {
-    items: computed(() => items.value),
+    items: toastItems,
     success,
     error,
     info,

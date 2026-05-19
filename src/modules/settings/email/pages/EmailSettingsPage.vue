@@ -157,22 +157,12 @@ onMounted(async () => {
 
   <section v-else class="space-y-6">
     <header class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200/80 pb-5">
-      <div class="flex gap-4">
-        <div
-          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200/50"
-          aria-hidden="true"
-        >
-          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-        </div>
-        <div>
+      <div>
           <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Settings</p>
           <h2 class="mt-0.5 text-xl font-bold tracking-tight text-slate-900">Email Settings</h2>
           <p class="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600">
             Configure outbound email delivery for your organization.
           </p>
-        </div>
       </div>
       <div class="flex flex-wrap items-center gap-3">
         <EmailSettingsStatusBadge :status="configStatus" />

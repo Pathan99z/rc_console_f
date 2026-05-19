@@ -2,10 +2,12 @@
 import { computed, nextTick, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
-import { tryShowPendingLoginWelcome } from '@/modules/auth/utils/loginWelcome'
+import { buildLoginWelcomeMessage, consumeLoginWelcome } from '@/modules/auth/utils/loginWelcome'
+import { useToast } from '@/shared/utils/useToast'
 import logo from '@/assets/logo.png'
 
 const auth = useAuthStore()
+const toast = useToast()
 const router = useRouter()
 const route = useRoute()
 const unverifiedState = ref(false)
@@ -39,12 +41,17 @@ async function onSubmit() {
   unverifiedState.value = false
   try {
     await auth.login({ ...form })
+    const pendingName = consumeLoginWelcome()
+    const firstName =
+      pendingName || (auth.user?.name || '').trim().split(/\s+/)[0] || 'there'
+    const welcomeMessage = buildLoginWelcomeMessage(firstName)
     await router.push(auth.getDefaultRoute())
     await nextTick()
-    tryShowPendingLoginWelcome()
+    toast.success(welcomeMessage, 5500)
   } catch {
     const emailErrors = auth.errors.email || []
     unverifiedState.value = emailErrors.some((message) => message.toLowerCase().includes('verify your email'))
+    toast.error(auth.apiMessage || 'Sign in failed. Please check your credentials.')
   }
 }
 
@@ -52,8 +59,9 @@ async function resendVerification() {
   if (auth.loading) return
   try {
     await auth.resendVerification()
+    toast.success(auth.apiMessage || 'Verification email sent.')
   } catch {
-    // message handled in store
+    toast.error(auth.apiMessage || 'Could not send verification email.')
   }
 }
 </script>

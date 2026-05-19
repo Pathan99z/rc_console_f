@@ -1,3 +1,5 @@
+import { useToast } from '@/shared/utils/useToast'
+
 const LOGIN_WELCOME_KEY = 'rc_login_welcome'
 
 export function queueLoginWelcome(userName?: string | null) {
@@ -18,12 +20,7 @@ export function buildLoginWelcomeMessage(firstName: string): string {
 }
 
 export function showLoginWelcomeToast(firstName: string) {
-  const message = buildLoginWelcomeMessage(firstName)
-  globalThis.dispatchEvent(
-    new CustomEvent('rc:toast', {
-      detail: { type: 'success', message, duration: 5500 },
-    }),
-  )
+  useToast().success(buildLoginWelcomeMessage(firstName), 5500)
 }
 
 /** Call after navigating into /app — shows welcome toast once per login. */

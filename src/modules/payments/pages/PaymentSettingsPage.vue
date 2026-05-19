@@ -110,23 +110,12 @@ onMounted(async () => {
 <template>
   <section class="space-y-6">
     <header class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200/80 pb-5">
-      <div class="flex gap-4">
-        <div
-          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200/50"
-          aria-hidden="true"
-        >
-          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2" />
-            <path stroke-linecap="round" stroke-width="2" d="M2 10h20" />
-          </svg>
-        </div>
-        <div>
+      <div>
           <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Billing</p>
           <h2 class="mt-0.5 text-xl font-bold tracking-tight text-slate-900">PayFast payment settings</h2>
           <p class="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600">
             Connect PayFast for quote checkout. Secrets are stored encrypted on the server; this screen only shows masked values after save.
           </p>
-        </div>
       </div>
       <button
         type="button"

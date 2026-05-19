@@ -35,9 +35,9 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-screen bg-[var(--rc-bg)]">
-    <div class="flex min-h-screen">
+    <div class="flex min-h-screen items-start">
       <AppSidebar :collapsed="sidebarCollapsed" />
-      <div class="flex-1">
+      <div class="flex min-h-screen min-w-0 flex-1 flex-col">
         <header class="topbar">
           <div class="topbar-left">
             <button class="collapse-btn" @click="sidebarCollapsed = !sidebarCollapsed" :aria-label="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">

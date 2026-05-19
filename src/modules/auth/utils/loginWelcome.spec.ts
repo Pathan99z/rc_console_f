@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest'
+import { useToast } from '@/shared/utils/useToast'
 import {
   buildLoginWelcomeMessage,
   consumeLoginWelcome,
@@ -21,14 +22,11 @@ describe('loginWelcome', () => {
     expect(buildLoginWelcomeMessage('Naceer')).toBe('Login Successful! Welcome back Naceer! 👋')
   })
 
-  it('dispatches toast event when showing pending welcome', () => {
-    const events: CustomEvent[] = []
-    const handler = (e: Event) => events.push(e as CustomEvent)
-    globalThis.addEventListener('rc:toast', handler)
+  it('shows welcome toast when showing pending welcome', () => {
+    const toast = useToast()
     queueLoginWelcome('Naceer Khanz')
     tryShowPendingLoginWelcome()
-    globalThis.removeEventListener('rc:toast', handler)
-    expect(events[0]?.detail).toMatchObject({
+    expect(toast.items.value.at(-1)).toMatchObject({
       type: 'success',
       message: 'Login Successful! Welcome back Naceer! 👋',
     })

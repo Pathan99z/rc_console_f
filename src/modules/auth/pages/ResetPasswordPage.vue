@@ -3,9 +3,11 @@ import { reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { useToast } from '@/shared/utils/useToast'
 import logo from '@/assets/logo.png'
 
 const auth = useAuthStore()
+const toast = useToast()
 const route = useRoute()
 const router = useRouter()
 const showPassword = ref(false)
@@ -20,9 +22,10 @@ async function onSubmit() {
   if (auth.loading) return
   try {
     await auth.resetPassword({ ...form })
+    toast.success(auth.apiMessage || 'Password updated successfully. You can sign in now.')
     router.push('/login')
   } catch {
-    // handled in store
+    toast.error(auth.apiMessage || 'Unable to reset password. Please try again.')
   }
 }
 </script>

@@ -2,9 +2,11 @@
 import { computed, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { useToast } from '@/shared/utils/useToast'
 import logo from '@/assets/logo.png'
 
 const auth = useAuthStore()
+const toast = useToast()
 const submitted = ref(false)
 
 const showPassword = ref(false)
@@ -45,8 +47,10 @@ async function onSubmit() {
   try {
     await auth.register({ ...form })
     submitted.value = true
+    toast.success(auth.apiMessage || 'Account created successfully. Please verify your email.')
   } catch {
     submitted.value = false
+    toast.error(auth.apiMessage || 'Unable to create account. Please try again.')
   }
 }
 </script>

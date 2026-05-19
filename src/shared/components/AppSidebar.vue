@@ -152,6 +152,8 @@ const menuItems = computed(() => {
   return [...base, ...addons]
 })
 
+const dashboardRoute = computed(() => authStore.getDefaultRoute())
+
 const userInitials = computed(() => {
   const name = authStore.user?.name || 'User'
   return name
@@ -170,10 +172,10 @@ async function logout() {
 
 <template>
   <aside class="sidebar" :class="{ 'sidebar-collapsed': props.collapsed }">
-    <div class="sidebar-logo">
+    <RouterLink :to="dashboardRoute" class="sidebar-logo" aria-label="Go to dashboard">
       <img :src="logo" alt="RC Console" class="logo-img" />
       <p v-if="!props.collapsed" class="logo-text text-gradient">Console</p>
-    </div>
+    </RouterLink>
     <nav class="sidebar-nav">
       <RouterLink
         v-for="item in menuItems"
@@ -224,13 +226,19 @@ async function logout() {
 <style scoped>
 /* Sidebar UI (copied from Dashboard.vue) */
 .sidebar {
+  --sidebar-logo-height: 5.25rem;
+  --sidebar-user-height: 4.75rem;
   width: 248px;
-  min-height: 100vh;
+  max-height: 100dvh;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
   background: #ffffff;
   border-right: 1px solid #e7eaf0;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  overflow: hidden;
   transition: width 0.25s ease;
 }
 
@@ -242,17 +250,29 @@ async function logout() {
   gap: 0.7rem;
   padding: 1.25rem 1rem;
   border-bottom: 1px solid #eef1f5;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.18s ease;
+}
+.sidebar-logo:hover {
+  background: #f8fafc;
 }
 
 .logo-img { width: 34px; height: 34px; object-fit: contain; flex-shrink: 0; }
 .logo-text { font-size: 1.15rem; font-weight: 700; white-space: nowrap; letter-spacing: -0.01em; }
 
 .sidebar-nav {
-  flex: 1;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: calc(100dvh - var(--sidebar-logo-height) - var(--sidebar-user-height));
   padding: 0.85rem 0.6rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .nav-item {
@@ -287,6 +307,7 @@ async function logout() {
   gap: 0.6rem;
   padding: 0.95rem 1rem;
   border-top: 1px solid #eef1f5;
+  flex-shrink: 0;
 }
 
 .user-avatar {
